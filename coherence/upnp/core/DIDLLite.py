@@ -869,9 +869,11 @@ class Container(Object):
                 self.searchClass.append(child.text)
 
 
+class Music(Container):
+    upnp_class = Container.upnp_class + '.music'
+
 class Person(Container):
     upnp_class = Container.upnp_class + '.person'
-
 
 class MusicArtist(Person):
     upnp_class = Person.upnp_class + '.musicArtist'
@@ -1030,6 +1032,7 @@ upnp_classes = {'object': Object,
                 'object.item.playlistItem': PlaylistItem,
                 'object.item.textItem': TextItem,
                 'object.container': Container,
+                'object.container.music': Music,
                 'object.container.person': Person,
                 'object.container.person.musicArtist': MusicArtist,
                 'object.container.playlistContainer': PlaylistContainer,
