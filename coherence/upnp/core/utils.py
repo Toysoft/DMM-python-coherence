@@ -212,13 +212,10 @@ def de_chunk_payload(response):
 
 class Request(server.Request):
 
-
     def process(self):
         "Process a request."
-
         # get site from channel
         self.site = self.channel.site
-
         # set various default headers
         self.setHeader('server', SERVER_ID)
         self.setHeader('date', http.datetimeToString())
@@ -226,10 +223,8 @@ class Request(server.Request):
 
         # Resource Identification
         url = self.path
-
         #remove trailing "/", if ever
         url = url.rstrip('/')
-
         scheme, netloc, path, query, fragment = urlsplit(url)
         self.prepath = []
         if path == "":
@@ -241,7 +236,10 @@ class Request(server.Request):
             def deferred_rendering(r):
                 self.render(r)
 
-            resrc = self.site.getResourceFor(self)
+            try:
+                resrc = self.site.getResourceFor(self)
+            except:
+                resrc = None
             if resrc is None:
                 self.setResponseCode(http.NOT_FOUND, "Error: No resource for path %s" % path)
                 self.finish()
@@ -253,7 +251,6 @@ class Request(server.Request):
 
         except:
             self.processingFailed(failure.Failure())
-
 
 class Site(server.Site):
 
