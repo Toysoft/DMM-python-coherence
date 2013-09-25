@@ -368,15 +368,9 @@ class Service(log.Loggable):
 
             #print 'service parse:', self, self.device
             self.detection_completed = True
+            self.process_event({}) #process_event will set self.last_time_updated which is in return checked by the clients to ensure service detection has completed
             louie.send('Coherence.UPnP.Service.detection_completed', sender=self.device, device=self.device)
             self.info("send signal Coherence.UPnP.Service.detection_completed for %r" % self)
-            """
-            if (self.last_time_updated == None):
-                if( self.id.endswith('AVTransport') or
-                    self.id.endswith('RenderingControl')):
-                    louie.send('Coherence.UPnP.DeviceClient.Service.notified', sender=self.device, service=self)
-                    self.last_time_updated = time.time()
-            """
 
         def gotError(failure, url):
             self.warning('error requesting', url)
