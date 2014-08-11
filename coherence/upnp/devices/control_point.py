@@ -328,7 +328,7 @@ def startXMLRPC( control_point, port):
     from twisted.web import server
     r = XMLRPC( control_point)
     print "XMLRPC-API on port %d ready" % port
-    reactor.listenTCP(port, server.Site(r))
+    reactor.listenTCP(port, server.Site(r), interface="::")
 
 
 if __name__ == '__main__':

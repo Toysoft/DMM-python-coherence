@@ -17,16 +17,19 @@ import coherence.extern.louie as louie
 
 SSDP_PORT = 1900
 SSDP_ADDR = '239.255.255.250'
+SSDP_ADDR_6 = 'FF05::C'
 
 from coherence import log
 
 class MSearch(DatagramProtocol, log.Loggable):
     logCategory = 'msearch'
 
-    def __init__(self, ssdp_server, test=False):
+    def __init__(self, ssdp_server, ipv6=False, test=False):
         self.ssdp_server = ssdp_server
+        self._isIPv6 = ipv6
         if test == False:
-            self.port = reactor.listenUDP(0, self)
+            iface = '::' if self._isIPv6 else ''
+            self.port = reactor.listenUDP(0, self, interface=iface)
 
             self.double_discover_loop = task.LoopingCall(self.double_discover)
             self.double_discover_loop.start(120.0)
@@ -58,16 +61,21 @@ class MSearch(DatagramProtocol, log.Loggable):
         self.discover()
         self.discover()
 
-    def discover(self):
+    def _discover(self, addr, port):
         req = [ 'M-SEARCH * HTTP/1.1',
-                'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
+                'HOST: %s:%d' % (addr, port),
                 'MAN: "ssdp:discover"',
                 'MX: 5',
                 'ST: ssdp:all',
                 '','']
         req = '\r\n'.join(req)
-
         try:
-            self.transport.write(req, (SSDP_ADDR, SSDP_PORT))
+            self.transport.write(req, (addr, port))
         except socket.error, msg:
             self.info("failure sending out the discovery message: %r" % msg)
+
+    def discover(self):
+        if self._isIPv6:
+            self._discover(SSDP_ADDR_6, SSDP_PORT)
+        else:
+            self._discover(SSDP_ADDR, SSDP_PORT)

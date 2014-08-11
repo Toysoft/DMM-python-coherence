@@ -123,7 +123,7 @@ class WebServer(log.Loggable):
         except ImportError:
             self.site = Site(SimpleRoot(coherence))
 
-        self.port = reactor.listenTCP( port, self.site)
+        self.port = reactor.listenTCP( port, self.site, interface="::")
         coherence.web_server_port = self.port._realPortNumber
         # XXX: is this the right way to do it?
         self.warning( "WebServer on port %d ready" % coherence.web_server_port)
@@ -332,6 +332,7 @@ class Coherence(log.Loggable):
         self.ssdp_server.subscribe("removed_device", self.remove_device)
 
         self.msearch = MSearch(self.ssdp_server,test=unittest)
+        self.msearch6 = MSearch(self.ssdp_server,ipv6=True,test=unittest)
 
         reactor.addSystemEventTrigger( 'before', 'shutdown', self.shutdown, force=True)
 
@@ -537,18 +538,21 @@ class Coherence(log.Loggable):
                 backend.unregister()
             self.active_backends = {}
             """ send service unsubscribe messages """
+            def _shutdownMSearch(msearch):
+                if hasattr(msearch, 'double_discover_loop'):
+                    msearch.double_discover_loop.stop()
+                if hasattr(msearch, 'port'):
+                    msearch.port.stopListening()
             try:
                 if self.web_server.port != None:
                     self.web_server.port.stopListening()
                     self.web_server.port = None
-                if hasattr(self.msearch, 'double_discover_loop'):
-                    self.msearch.double_discover_loop.stop()
-                if hasattr(self.msearch, 'port'):
-                    self.msearch.port.stopListening()
                 if hasattr(self.ssdp_server, 'resend_notify_loop'):
                     self.ssdp_server.resend_notify_loop.stop()
                 if hasattr(self.ssdp_server, 'port'):
                     self.ssdp_server.port.stopListening()
+                _shutdownMSearch(self.msearch)
+                _shutdownMSearch(self.msearch6)
                 #self.renew_service_subscription_loop.stop()
             except:
                 pass
