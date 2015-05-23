@@ -558,9 +558,8 @@ class LazyContainer(Container, log.Loggable):
 
         if self.childrenRetrievingNeeded is True:
             #print "children Retrieving IS Needed (offset is %d)" % start
-            return self.retrieve_all_children()
-        else:
-            return Container.get_children(self, start, request_count)
+            self.retrieve_all_children()
+        Container.get_children(self, start, request_count)
 
 
 ROOT_CONTAINER_ID = 0
