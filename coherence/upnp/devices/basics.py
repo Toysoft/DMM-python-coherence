@@ -90,20 +90,16 @@ class RootDeviceXML(static.Data):
 
         d = ET.SubElement(root, 'device')
 
+        x1 = ET.SubElement(d, 'dlna:X_DLNADOC')
+        x1.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+        x2 = ET.SubElement(d, 'dlna:X_DLNADOC')
+        x2.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
         if device_type == 'MediaServer':
-            x = ET.SubElement(d, 'dlna:X_DLNADOC')
-            x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
-            x.text = 'DMS-1.50'
-            x = ET.SubElement(d, 'dlna:X_DLNADOC')
-            x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
-            x.text = 'M-DMS-1.50'
+            dt = "DMS"
         elif device_type == 'MediaRenderer':
-            x = ET.SubElement(d, 'dlna:X_DLNADOC')
-            x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
-            x.text = 'DMR-1.50'
-            x = ET.SubElement(d, 'dlna:X_DLNADOC')
-            x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
-            x.text = 'M-DMR-1.50'
+            dt = "DMR"
+        x1.text = '%s-1.50' %(dt)
+        x2.text = 'M-%s-1.50' %(dt)
 
         if len(dlna_caps) > 0:
             if isinstance(dlna_caps, basestring):
@@ -190,6 +186,7 @@ class RootDeviceXML(static.Data):
 
 
 class BasicDeviceMixin(object):
+    device_type = 'Coherence UPnP BasicDevice'
 
     def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence
@@ -203,6 +200,13 @@ class BasicDeviceMixin(object):
         except KeyError:
             from coherence.upnp.core.uuid import UUID
             self.uuid = UUID()
+
+        self.manufacturer = kwargs.get('manufacturer', 'beebits.net')
+        self.manufacturer_url = kwargs.get('manufacturer_url', 'http://coherence.beebits.net')
+        self.model_description = kwargs.get('model_description', 'Coherence UPnP %s' % self.device_type)
+        self.model_name = kwargs.get('model_name', 'Coherence UPnP %s' % self.device_type)
+        self.model_number = kwargs.get('model_number', __version__)
+        self.model_url = kwargs.get('model_url', 'http://coherence.beebits.net')
 
         self.backend = None
         urlbase = self.coherence.urlbase

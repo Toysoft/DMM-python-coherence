@@ -17,6 +17,7 @@ from datetime import datetime
 
 DC_NS = 'http://purl.org/dc/elements/1.1/'
 UPNP_NS = 'urn:schemas-upnp-org:metadata-1-0/upnp/'
+DIDL_NS = 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/'
 
 my_namespaces = { DC_NS: 'dc',
                  UPNP_NS: 'upnp'
@@ -926,7 +927,7 @@ class DIDLElement(ElementInterface,log.Loggable):
     def __init__(self, upnp_client='',
                  parent_container=None,requested_id=None,
                  transcoding=False):
-        ElementInterface.__init__(self, 'DIDL-Lite', {})
+        ElementInterface.__init__(self, 'DIDL-Lite', {"xmlns" : DIDL_NS})
         self._items = []
         self.upnp_client = upnp_client
         self.parent_container = parent_container

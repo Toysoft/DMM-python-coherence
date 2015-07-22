@@ -97,8 +97,8 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
         except AttributeError:
             dlna_caps = []
 
-
         version = self.version
+
         while version > 0:
             self.web_resource.putChild( 'description-%d.xml' % version,
                                     RootDeviceXML( self.coherence.hostname,
@@ -108,12 +108,18 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
                                     version=version,
                                     #presentation_url='/'+str(self.uuid)[5:],
                                     friendly_name=self.backend.name,
-                                    model_description='Coherence UPnP A/V %s' % self.device_type,
-                                    model_name='Coherence UPnP A/V %s' % self.device_type,
+
                                     services=self._services,
                                     devices=self._devices,
                                     icons=self.icons,
-                                    dlna_caps=dlna_caps))
+                                    dlna_caps=dlna_caps,
+                                    manufacturer=self.manufacturer,
+                                    manufacturer_url=self.manufacturer_url,
+                                    model_name=self.model_name,
+                                    model_description=self.model_description,
+                                    model_number=self.model_number,
+                                    model_url=self.model_url
+                                    ))
             version -= 1
 
 

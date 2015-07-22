@@ -11,23 +11,19 @@ import traceback
 from StringIO import StringIO
 import urllib
 
-from twisted.internet import task
 from twisted.internet import defer
 from twisted.web import static
-from twisted.web import resource, server
+from twisted.web import resource
 #from twisted.web import proxy
 from twisted.python import util
-from twisted.python.filepath import FilePath
 
-from coherence.extern.et import ET, indent
+from coherence.extern.et import ET
 
 from coherence import __version__
 
-from coherence.upnp.core.service import ServiceServer
 from coherence.upnp.core import utils
 from coherence.upnp.core.utils import StaticFile
 from coherence.upnp.core.utils import ReverseProxyResource
-
 
 from coherence.upnp.services.servers.connection_manager_server import ConnectionManagerServer
 from coherence.upnp.services.servers.content_directory_server import ContentDirectoryServer
@@ -463,17 +459,21 @@ class MSRoot(resource.Resource, log.Loggable):
                                          self.listchilds(request.uri))
 
 
-class RootDeviceXML(static.Data):
+class XboxRootDeviceXML(static.Data):
 
     def __init__(self, hostname, uuid, urlbase,
                         device_type='MediaServer',
                         version=2,
-                        friendly_name='Coherence UPnP A/V MediaServer',
-                        xbox_hack=False,
+                        friendly_name='Coherence UPnP MediaServer',
                         services=[],
                         devices=[],
                         icons=[],
-                        presentationURL=None):
+                        presentation_url=None,
+                        manufacturer='beebits.net',
+                        manufacturer_url='http://coherence.beebits.net',
+                        model_description='Coherence UPnP MediaServer',
+                        model_number=__version__,
+                        model_url='http://coherence.beebits.net'):
         uuid = str(uuid)
         root = ET.Element('root')
         root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
@@ -487,19 +487,13 @@ class RootDeviceXML(static.Data):
 
         d = ET.SubElement(root, 'device')
         ET.SubElement(d, 'deviceType').text = device_type
-        if xbox_hack == False:
-            ET.SubElement(d, 'friendlyName').text = friendly_name
-        else:
-            ET.SubElement(d, 'friendlyName').text = friendly_name + ' : 1 : Windows Media Connect'
-        ET.SubElement(d, 'manufacturer').text = 'beebits.net'
-        ET.SubElement(d, 'manufacturerURL').text = 'http://coherence.beebits.net'
-        ET.SubElement(d, 'modelDescription').text = 'Coherence UPnP A/V MediaServer'
-        if xbox_hack == False:
-            ET.SubElement(d, 'modelName').text = 'Coherence UPnP A/V MediaServer'
-        else:
-            ET.SubElement(d, 'modelName').text = 'Windows Media Connect'
-        ET.SubElement(d, 'modelNumber').text = __version__
-        ET.SubElement(d, 'modelURL').text = 'http://coherence.beebits.net'
+        ET.SubElement(d, 'friendlyName').text = friendly_name + ' : 1 : Windows Media Connect'
+        ET.SubElement(d, 'manufacturer').text = manufacturer
+        ET.SubElement(d, 'manufacturerURL').text = manufacturer_url
+        ET.SubElement(d, 'modelDescription').text = model_description
+        ET.SubElement(d, 'modelName').text = 'Windows Media Connect'
+        ET.SubElement(d, 'modelNumber').text = model_number
+        ET.SubElement(d, 'modelURL').text = model_url
         ET.SubElement(d, 'serialNumber').text = '0000001'
         ET.SubElement(d, 'UDN').text = uuid
         ET.SubElement(d, 'UPC').text = ''
@@ -537,8 +531,6 @@ class RootDeviceXML(static.Data):
             e = ET.SubElement(d, 'serviceList')
             for service in services:
                 id = service.get_id()
-                if xbox_hack == False and id == 'X_MS_MediaReceiverRegistrar':
-                    continue
                 s = ET.SubElement(e, 'service')
                 try:
                     namespace = service.namespace
@@ -566,9 +558,9 @@ class RootDeviceXML(static.Data):
         if len(devices):
             e = ET.SubElement(d, 'deviceList')
 
-        if presentationURL is None:
-            presentationURL = '/' + uuid[5:]
-        ET.SubElement(d, 'presentationURL').text = presentationURL
+        if presentation_url is None:
+            presentation_url = '/' + uuid[5:]
+        ET.SubElement(d, 'presentationURL').text = presentation_url
 
         x = ET.SubElement(d, 'dlna:X_DLNADOC')
         x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
@@ -660,28 +652,41 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
         self.coherence.add_web_resource( str(self.uuid)[5:], self.web_resource)
 
         version = int(self.version)
+        from coherence.upnp.devices.basics import RootDeviceXML
         while version > 0:
             self.web_resource.putChild( 'description-%d.xml' % version,
                                     RootDeviceXML( self.coherence.hostname,
                                     str(self.uuid),
                                     self.coherence.urlbase,
-                                    self.device_type, version,
+                                    device_type=self.device_type,
+                                    version=version,
                                     friendly_name=self.backend.name,
                                     services=self._services,
                                     devices=self._devices,
                                     icons=self.icons,
-                                    presentationURL = self.presentationURL))
+                                    presentation_url = self.presentationURL,
+                                    manufacturer=self.manufacturer,
+                                    manufacturer_url=self.manufacturer_url,
+                                    model_description=self.model_description,
+                                    model_name=self.model_name,
+                                    model_number=self.model_number,
+                                    model_url=self.model_url,
+                                    ))
             self.web_resource.putChild( 'xbox-description-%d.xml' % version,
-                                    RootDeviceXML( self.coherence.hostname,
+                                    XboxRootDeviceXML( self.coherence.hostname,
                                     str(self.uuid),
                                     self.coherence.urlbase,
                                     self.device_type, version,
                                     friendly_name=self.backend.name,
-                                    xbox_hack=True,
                                     services=self._services,
                                     devices=self._devices,
                                     icons=self.icons,
-                                    presentationURL = self.presentationURL))
+                                    presentation_url = self.presentationURL,
+                                    manufacturer=self.manufacturer,
+                                    manufacturer_url=self.manufacturer_url,
+                                    model_description=self.model_description,
+                                    model_number=self.model_number,
+                                    model_url=self.model_url))
             version -= 1
 
         self.web_resource.putChild('ConnectionManager', self.connection_manager_server)
