@@ -74,7 +74,12 @@ def build_soap_call(method, arguments, is_response=False,
         # append the method call
         if is_response is True:
             method += "Response"
+
+        ns,method = method.split("}")
+        method = "u:%s" %method
+        ns = ns[1:]
         re = ET.SubElement(body,method)
+        re.attrib.update({'xmlns:u' : ns})
         if encoding:
             re.set(NS_SOAP_ENV + "encodingStyle", encoding)
     else:
