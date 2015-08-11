@@ -348,21 +348,23 @@ class Container(BackendItem):
         
 
     def register_child(self, child, external_id = None): 
-        id = self.store.append_item(child)
-        child.url = self.store.urlbase + str(id)
+        storage_id = self.store.append_item(child)
+        child.url = self.store.urlbase + str(storage_id)
         child.parent = self
         if external_id is not None:
             child.external_id = external_id
             self.children_by_external_id[external_id] = child
+        return storage_id
 
     def add_child(self, child, external_id = None, update=True):
-        id = self.register_child(child, external_id)
+        storage_id = self.register_child(child, external_id)
         if self.children is None:
             self.children = []
         self.children.append(child)
         self.sorted = False
         if update == True:
             self.update_id += 1
+        return storage_id
 
     def remove_child(self, child, external_id = None, update=True):
         self.children.remove(child)
