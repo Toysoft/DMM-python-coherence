@@ -24,6 +24,7 @@ from coherence import __version__
 from coherence.upnp.core import utils
 from coherence.upnp.core.utils import StaticFile
 from coherence.upnp.core.utils import ReverseProxyResource
+from coherence.upnp.devices.basics import RootDeviceXML
 
 from coherence.upnp.services.servers.connection_manager_server import ConnectionManagerServer
 from coherence.upnp.services.servers.content_directory_server import ContentDirectoryServer
@@ -186,15 +187,18 @@ class MSRoot(resource.Resource, log.Loggable):
                 return d
             return self.import_response(None,path)
 
-        if(headers.has_key('user-agent') and
-           (headers['user-agent'].find('Xbox/') == 0 or      # XBox
-            headers['user-agent'].startswith("""Mozilla/4.0 (compatible; UPnP/1.0; Windows""")) and  # wmp11
-           path in ['description-1.xml','description-2.xml']):
-            self.info('XBox/WMP alert, we need to simulate a Windows Media Connect server')
-            if self.children.has_key('xbox-description-1.xml'):
-                self.msg( 'returning xbox-description-1.xml')
-                return self.children['xbox-description-1.xml']
-
+        if path in ['description-1.xml','description-2.xml']:
+            ua = headers.get('user-agent', '')
+            if ua.find('Xbox/') == 0 or ua.startswith("""Mozilla/4.0 (compatible; UPnP/1.0; Windows"""):
+                self.info('XBox/WMP alert, we need to simulate a Windows Media Connect server')
+                if self.children.has_key('xbox-description-1.xml'):
+                    self.msg( 'returning xbox-description-1.xml')
+                    return self.children['xbox-description-1.xml']
+            elif ua.find('SEC_HHP_BD') == 0:
+                pass
+            elif ua.find('SEC_HHP_') >= 0:
+                pass
+                #return self.children['sec-%s' %path]
         # resource http://XXXX/<deviceID>/config
         # configuration for the given device
         # accepted methods:
@@ -652,7 +656,6 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
         self.coherence.add_web_resource( str(self.uuid)[5:], self.web_resource)
 
         version = int(self.version)
-        from coherence.upnp.devices.basics import RootDeviceXML
         while version > 0:
             self.web_resource.putChild( 'description-%d.xml' % version,
                                     RootDeviceXML( self.coherence.hostname,
@@ -671,6 +674,27 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
                                     model_name=self.model_name,
                                     model_number=self.model_number,
                                     model_url=self.model_url,
+                                    dlna_caps = ['av-upload,image-upload,audio-upload']
+                                    ))
+            self.web_resource.putChild( 'sec-description-%d.xml' % version,
+                                    RootDeviceXML( self.coherence.hostname,
+                                    str(self.uuid),
+                                    self.coherence.urlbase,
+                                    device_type=self.device_type,
+                                    version=version,
+                                    friendly_name=self.backend.name,
+                                    services=self._services,
+                                    devices=self._devices,
+                                    icons=self.icons,
+                                    presentation_url = self.presentationURL,
+                                    manufacturer=self.manufacturer,
+                                    manufacturer_url=self.manufacturer_url,
+                                    model_description=self.model_description,
+                                    model_name=self.model_name,
+                                    model_number=self.model_number,
+                                    model_url=self.model_url,
+                                    dlna_caps = ['av-upload,image-upload,audio-upload'],
+                                    sec_dmc10 = True
                                     ))
             self.web_resource.putChild( 'xbox-description-%d.xml' % version,
                                     XboxRootDeviceXML( self.coherence.hostname,
@@ -713,4 +737,5 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
                         self.web_resource.putChild(icon['url'],StaticFile(icon_path,defaultType=icon['mimetype']))
 
         self.register()
+
         self.warning("%s %s (%s) activated with id %s" % (self.device_type, self.backend.name, self.backend, str(self.uuid)[5:]))

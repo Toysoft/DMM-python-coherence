@@ -77,7 +77,8 @@ class RootDeviceXML(static.Data):
                         services=[],
                         devices=[],
                         icons=[],
-                        dlna_caps=[]):
+                        dlna_caps=[],
+                        sec_dmc10=False):
         uuid = str(uuid)
         root = ET.Element('root')
         root.attrib['xmlns']=xmlns
@@ -85,6 +86,10 @@ class RootDeviceXML(static.Data):
         e = ET.SubElement(root, 'specVersion')
         ET.SubElement( e, 'major').text = '1'
         ET.SubElement( e, 'minor').text = '0'
+
+        sec_ns = 'xmlns:sec'
+        sec_ns_val = 'http://www.sec.co.kr'
+        root.attrib[sec_ns] = sec_ns_val
 
         #ET.SubElement(root, 'URLBase').text = urlbase + uuid[5:] + '/'
 
@@ -96,6 +101,16 @@ class RootDeviceXML(static.Data):
         x2.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
         if device_type == 'MediaServer':
             dt = "DMS"
+            if sec_dmc10:
+                sec_ns = 'xmlns:sec'
+                sec_ns_val = 'http://www.sec.co.kr'
+                sec_text = 'smi,DCM10,getMediaInfo.sec,getCaptionInfo.sec'
+                sec = ET.SubElement(d, 'sec:ProductCap')
+                sec.attrib[sec_ns]= sec_ns_val
+                sec.text = sec_text
+                sec = ET.SubElement(d, 'sec:X_ProductCap')
+                sec.attrib[sec_ns]= sec_ns_val
+                sec.text = sec_text
         elif device_type == 'MediaRenderer':
             dt = "DMR"
         x1.text = '%s-1.50' %(dt)
