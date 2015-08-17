@@ -236,9 +236,13 @@ class Resource(object):
                 and maybe they irritate these poor things anyway
             """
             additional_info = '*'
-        elif upnp_client  in ('PLAYSTATION3',):
+        elif upnp_client == 'PLAYSTATION3':
             if content_format.startswith('video/'):
                 additional_info = '*'
+
+        elif upnp_client.startswith("Samsung"): #can be 'Samsung' or 'SamsungDMC10'
+            if content_format == "video/x-matroska": #Samsung uses a wrong mimetype for mkv
+                content_format = "video/x-mkv"
 
         a_list = additional_info.split(';')
         for part in a_list:
