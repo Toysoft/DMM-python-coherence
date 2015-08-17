@@ -239,7 +239,6 @@ class Resource(object):
         elif upnp_client == 'PLAYSTATION3':
             if content_format.startswith('video/'):
                 additional_info = '*'
-
         elif upnp_client.startswith("Samsung"): #can be 'Samsung' or 'SamsungDMC10'
             if content_format == "video/x-matroska": #Samsung uses a wrong mimetype for mkv
                 content_format = "video/x-mkv"
@@ -995,6 +994,10 @@ class DIDLElement(ElementInterface,log.Loggable):
         elt = elt.getroot()
         for node in elt.getchildren():
             upnp_class_name =  node.findtext('{%s}class' % 'urn:schemas-upnp-org:metadata-1-0/upnp/')
+            if upnp_class_name is None:
+                #Samsung sends something like <sec:deviceFriendlyName>...</sec:deviceFriendlyName>
+                #simply ignore that
+                continue
             upnp_class = instance.get_upnp_class(upnp_class_name.strip())
             new_node = upnp_class.fromString(ET.tostring(node))
             instance.addItem(new_node)
