@@ -18,6 +18,7 @@ from datetime import datetime
 DC_NS = 'http://purl.org/dc/elements/1.1/'
 UPNP_NS = 'urn:schemas-upnp-org:metadata-1-0/upnp/'
 DIDL_NS = 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/'
+DLNA_NS = 'urn:schemas-dlna-org:metadata-1-0'
 
 my_namespaces = { DC_NS: 'dc',
                  UPNP_NS: 'upnp'
@@ -468,7 +469,8 @@ class Object(log.Loggable):
 
         ET.SubElement(root, qname('class',UPNP_NS)).text = self.upnp_class
 
-        if kwargs.get('upnp_client','') == 'XBox':
+        upnp_client = kwargs.get('upnp_client','')
+        if upnp_client == 'XBox':
             u = root.find(qname('class',UPNP_NS))
             if(kwargs.get('parent_container',None) != None and
                 u.text.startswith('object.container')):
@@ -500,8 +502,9 @@ class Object(log.Loggable):
         if self.albumArtURI is not None:
             e = ET.SubElement(root, qname('albumArtURI',UPNP_NS))
             e.text = self.albumArtURI
-            e.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:metadata-1-0'
-            e.attrib['dlna:profileID'] = 'JPEG_TN'
+            if not upnp_client.startswith("Samsung"): #can be 'Samsung' or 'SamsungDMC10'
+                e.attrib['xmlns:dlna'] = DLNA_NS
+                e.attrib['dlna:profileID'] = 'JPEG_TN'
 
         if self.artist is not None:
             ET.SubElement(root, qname('artist',UPNP_NS)).text = self.artist
