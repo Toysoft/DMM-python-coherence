@@ -88,8 +88,9 @@ class Device(log.Loggable):
         else:
             louie.send('Coherence.UPnP.Device.detection_completed', self, device=self)
 
-    def service_detection_failed( self, device):
-        self.remove()
+    def service_detection_failed(self, device):
+        if device == self:
+            self.remove()
 
     def get_id(self):
         return self.udn
@@ -295,14 +296,13 @@ class Device(log.Loggable):
                                          controlUrl,
                                          eventSubUrl, presentationUrl, scpdUrl, self))
 
-
-            # now look for all sub devices
-            embedded_devices = d.find('./{%s}deviceList' % ns)
-            if embedded_devices:
-                for d in embedded_devices.findall('./{%s}device' % ns):
-                    embedded_device = Device(self)
-                    self.add_device(embedded_device)
-                    embedded_device.parse_device(d)
+        # now look for all sub devices
+        embedded_devices = d.find('./{%s}deviceList' % ns)
+        if embedded_devices:
+            for d in embedded_devices.findall('./{%s}device' % ns):
+                embedded_device = Device(self)
+                self.add_device(embedded_device)
+                embedded_device.parse_device(d)
 
         self.receiver()
 
