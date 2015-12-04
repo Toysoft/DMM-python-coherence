@@ -33,6 +33,7 @@ class Device(log.Loggable):
         self.client = None
         self.icons = []
         self.devices = []
+        self.satipcap = None
 
         louie.connect( self.receiver, 'Coherence.UPnP.Service.detection_completed', self)
         louie.connect( self.service_detection_failed, 'Coherence.UPnP.Service.detection_failed', self)
@@ -252,6 +253,12 @@ class Device(log.Loggable):
         except:
             pass
 
+        try:
+            satipns = "urn:ses-com:satip"
+            self.satipcap = d.findtext('./{%s}X_SATIPCAP' % satipns)
+        except:
+            pass
+
         icon_list = d.find('./{%s}iconList' % ns)
         if icon_list is not None:
             import urllib2
@@ -329,6 +336,9 @@ class Device(log.Loggable):
             return self.parent.get_id()
         except:
             return ''
+
+    def get_satipcap(self):
+        return self.satipcap or ''
 
     def make_fullyqualified(self,url):
         return self.parent.make_fullyqualified(url)
