@@ -329,42 +329,44 @@ class Service(log.Loggable):
             #print "gotPage"
             #print x
             self.scpdXML, headers = x
-            tree = utils.parse_xml(self.scpdXML, 'utf-8').getroot()
-            ns = "urn:schemas-upnp-org:service-1-0"
+            try:
+                tree = utils.parse_xml(self.scpdXML, 'utf-8').getroot()
+                ns = "urn:schemas-upnp-org:service-1-0"
 
-            for action_node in tree.findall('.//{%s}action' % ns):
-                name = action_node.findtext('{%s}name' % ns)
-                arguments = []
-                for argument in action_node.findall('.//{%s}argument' % ns):
-                    arg_name = argument.findtext('{%s}name' % ns)
-                    arg_direction = argument.findtext('{%s}direction' % ns)
-                    arg_state_var = argument.findtext('{%s}relatedStateVariable' % ns)
-                    arguments.append(action.Argument(arg_name, arg_direction,
-                                                     arg_state_var))
-                self._actions[name] = action.Action(self, name, 'n/a', arguments)
+                for action_node in tree.findall('.//{%s}action' % ns):
+                    name = action_node.findtext('{%s}name' % ns)
+                    arguments = []
+                    for argument in action_node.findall('.//{%s}argument' % ns):
+                        arg_name = argument.findtext('{%s}name' % ns)
+                        arg_direction = argument.findtext('{%s}direction' % ns)
+                        arg_state_var = argument.findtext('{%s}relatedStateVariable' % ns)
+                        arguments.append(action.Argument(arg_name, arg_direction,
+                                                         arg_state_var))
+                    self._actions[name] = action.Action(self, name, 'n/a', arguments)
 
-            for var_node in tree.findall('.//{%s}stateVariable' % ns):
-                send_events = var_node.attrib.get('sendEvents','yes')
-                name = var_node.findtext('{%s}name' % ns)
-                data_type = var_node.findtext('{%s}dataType' % ns)
-                values = []
-                """ we need to ignore this, as there we don't get there our
-                    {urn:schemas-beebits-net:service-1-0}X_withVendorDefines
-                    attibute there
-                """
-                for allowed in var_node.findall('.//{%s}allowedValue' % ns):
-                    values.append(allowed.text)
-                instance = 0
-                self._variables.get(instance)[name] = variable.StateVariable(self, name,
-                                                               'n/a',
-                                                               instance, send_events,
-                                                               data_type, values)
-                """ we need to do this here, as there we don't get there our
-                    {urn:schemas-beebits-net:service-1-0}X_withVendorDefines
-                    attibute there
-                """
-                self._variables.get(instance)[name].has_vendor_values = True
-
+                for var_node in tree.findall('.//{%s}stateVariable' % ns):
+                    send_events = var_node.attrib.get('sendEvents','yes')
+                    name = var_node.findtext('{%s}name' % ns)
+                    data_type = var_node.findtext('{%s}dataType' % ns)
+                    values = []
+                    """ we need to ignore this, as there we don't get there our
+                        {urn:schemas-beebits-net:service-1-0}X_withVendorDefines
+                        attibute there
+                    """
+                    for allowed in var_node.findall('.//{%s}allowedValue' % ns):
+                        values.append(allowed.text)
+                    instance = 0
+                    self._variables.get(instance)[name] = variable.StateVariable(self, name,
+                                                                   'n/a',
+                                                                   instance, send_events,
+                                                                   data_type, values)
+                    """ we need to do this here, as there we don't get there our
+                        {urn:schemas-beebits-net:service-1-0}X_withVendorDefines
+                        attibute there
+                    """
+                    self._variables.get(instance)[name].has_vendor_values = True
+            except Exception as e:
+                self.warning("error parsing service xml, service skipped!", e)
 
             #print 'service parse:', self, self.device
             self.detection_completed = True
