@@ -48,15 +48,21 @@ def connect(receiver, signal=All, sender=Any, weak=True):
     if signal in (Any, All):
         raise NotImplemented("This is not allowed. Signal HAS to be something")
     receiver = _global_dispatcher.connect(signal, callback)
-    _global_receivers_pool[(callback, signal)] = receiver
+    _global_receivers_pool["%s%s" %(callback, signal)] = receiver
     return receiver
 
 def disconnect(receiver, signal=All, sender=Any, weak=True):
     callback = receiver
     if signal in (Any, All):
         raise NotImplemented("This is not allowed. Signal HAS to be something")
-    receiver = _global_receivers_pool.pop((callback, signal))
-    return _global_dispatcher.disconnect(receiver)
+    key = "%s%s" %(callback, signal)
+    if key in _global_receivers_pool:
+        receiver = _global_receivers_pool.pop(key)
+        return _global_dispatcher.disconnect(receiver)
+    else:
+        print warnings.warn("louie - cannot disconnect %s" %(key,))
+        return
+
 
 def send(signal=All, sender=Anonymous, *arguments, **named):
     if signal in (Any, All):
