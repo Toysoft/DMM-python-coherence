@@ -67,6 +67,7 @@ class MSearch(DatagramProtocol, log.Loggable):
                 'MAN: "ssdp:discover"',
                 'MX: 5',
                 'ST: ssdp:all',
+                'USER-AGENT: Coherence UDAP/2.0',
                 '','']
         req = '\r\n'.join(req)
         try:
