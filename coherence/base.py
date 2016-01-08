@@ -652,7 +652,7 @@ class Coherence(log.Loggable):
             self.info("creating device/service ",infos['USN'])
             root_id = infos['USN'][:-len(infos['ST'])-2]
             root = self.get_device_with_id(root_id)
-            device = Device(infos, root)
+            device = Device(parent=root)
         # fire this only after the device detection is fully completed
         # and we are on the device level already, so we can work with them instead with the SSDP announce
         #if infos['ST'] == 'upnp:rootdevice':

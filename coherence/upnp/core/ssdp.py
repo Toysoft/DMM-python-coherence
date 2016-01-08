@@ -114,6 +114,12 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
         self.info('Registering %s (%s)' % (st, location))
 
+        root_usn = usn[:-len(st)-2]
+        root_st = 'upnp:rootdevice'
+        if not root_usn in self.known and st != root_st:
+            self.info("RootDevice registration enforced for %s!" %(usn,))
+            self.register(manifestation, root_usn, root_st, location, server, cache_control, silent, host)
+
         self.known[usn] = {}
         self.known[usn]['USN'] = usn
         self.known[usn]['LOCATION'] = location
