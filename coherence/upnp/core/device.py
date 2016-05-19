@@ -577,7 +577,7 @@ class RootDevice(Device):
             return url
         import urlparse
         base = self.get_urlbase()
-        if base != None:
+        if base:
             if base[-1] != '/':
                 base += '/'
             r = urlparse.urljoin(base,url)
