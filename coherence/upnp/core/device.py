@@ -258,6 +258,12 @@ class Device(log.Loggable):
             self.satipcap = d.findtext('./{%s}X_SATIPCAP' % satipns)
         except:
             pass
+#PANASONIC MESSED IT UP!
+        try:
+            satipns = "urn-ses-com:satip"
+            self.satipcap = d.findtext('./{%s}X_SATIPCAP' % satipns)
+        except:
+            pass
 
         icon_list = d.find('./{%s}iconList' % ns)
         if icon_list is not None:
