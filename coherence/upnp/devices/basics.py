@@ -99,6 +99,7 @@ class RootDeviceXML(static.Data):
         x1.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
         x2 = ET.SubElement(d, 'dlna:X_DLNADOC')
         x2.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+        dt = None
         if device_type == 'MediaServer':
             dt = "DMS"
             if sec_dmc10:
@@ -113,8 +114,9 @@ class RootDeviceXML(static.Data):
                 sec.text = sec_text
         elif device_type == 'MediaRenderer':
             dt = "DMR"
-        x1.text = '%s-1.50' %(dt)
-        x2.text = 'M-%s-1.50' %(dt)
+        if dt:
+            x1.text = '%s-1.50' %(dt)
+            x2.text = 'M-%s-1.50' %(dt)
 
         if len(dlna_caps) > 0:
             if isinstance(dlna_caps, basestring):
