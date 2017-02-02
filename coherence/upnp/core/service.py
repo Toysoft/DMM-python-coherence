@@ -637,8 +637,11 @@ class ServiceServer(log.Loggable):
         for s in self._subscribers.values():
             timeout = 86400
             #print s
-            if s['timeout'].startswith('Second-'):
-                timeout = int(s['timeout'][len('Second-'):])
+            timeout = s['timeout']
+            if s['timeout'].endswith("infinite"):
+                timeout = time.time() + 1800
+            elif s['timeout'].startswith('Second-'):
+                timeout = int(timeout[len('Second-'):])
             if time.time() > s['created'] + timeout:
                 del s
 
