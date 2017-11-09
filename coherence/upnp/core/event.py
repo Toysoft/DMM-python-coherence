@@ -117,12 +117,13 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
             self.debug("data:", data)
         else:
             headers = request.getAllHeaders()
+            timeout = headers.get('timeout', 'Second-infinite')
             try:
                 #print self.subscribers
                 #print headers['sid']
                 if self.subscribers.has_key(headers['sid']):
                     s = self.subscribers[headers['sid']]
-                    s['timeout'] = headers['timeout']
+                    s['timeout'] = timeout
                     s['created'] = time.time()
                 elif not headers.has_key('callback'):
                     request.setResponseCode(404)
@@ -130,18 +131,23 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
                     request.setHeader('CONTENT-LENGTH', 0)
                     return ""
             except:
+                if not headers.has_key('callback'):
+                    request.setResponseCode(404)
+                    request.setHeader('SERVER', SERVER_ID)
+                    request.setHeader('CONTENT-LENGTH', 0)
+                    return ""
                 from .uuid import UUID
                 sid = UUID()
                 s = { 'sid' : str(sid),
                       'callback' : headers['callback'][1:len(headers['callback'])-1],
                       'seq' : 0}
-                s['timeout'] = headers['timeout']
+                s['timeout'] = timeout
                 s['created'] = time.time()
                 self.service.new_subscriber(s)
 
             request.setHeader('SID', s['sid'])
             #request.setHeader('Subscription-ID', sid)  wrong example in the UPnP UUID spec?
-            request.setHeader('TIMEOUT', s['timeout'])
+            request.setHeader('TIMEOUT', timeout)
             request.setHeader('SERVER', SERVER_ID)
             request.setHeader('CONTENT-LENGTH', 0)
         return ""
