@@ -12,7 +12,6 @@ SERVER_ID = ','.join([platform.system(),
 
 try:
     from twisted import version as twisted_version
-    from twisted.web import version as twisted_web_version
     from twisted.python.versions import Version
 except ImportError, exc:
     # log error to stderr, might be useful for debugging purpose
@@ -23,9 +22,6 @@ except ImportError, exc:
 try:
     if twisted_version < Version("twisted", 2, 5, 0):
         raise ImportError("Twisted >= 2.5 is required. Please install it.")
-
-    if twisted_web_version < Version("twisted.web", 2, 5, 0):
-        raise ImportError("Twisted.Web >= 2.5 is required. Please install it")
 except ImportError, exc:
     # log error to stderr, might be useful for debugging purpose
     for arg in exc.args:
