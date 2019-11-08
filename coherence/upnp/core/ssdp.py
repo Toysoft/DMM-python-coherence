@@ -98,7 +98,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             # SSDP presence
             self.notifyReceived(headers, (host, port))
         else:
-            self.warning('Unknown SSDP command %s %s' % (cmd[0], cmd[1]))
+            self.warning('Unknown SSDP command %s %s from %s' % (cmd[0], cmd[1], host))
 
         # make raw data available
         # send out the signal after we had a chance to register the device
@@ -161,19 +161,19 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         self.info('Notification from (%s,%d) for %s' % (host, port, headers['nt']))
         self.debug('Notification headers:', headers)
 
-        if headers['nts'] == 'ssdp:alive':
+        if headers['nts'].strip() == 'ssdp:alive':
             try:
                 self.known[headers['usn']]['last-seen'] = time.time()
                 self.debug('updating last-seen for %r' % headers['usn'])
             except KeyError:
                 self.register('remote', headers['usn'], headers['nt'], headers['location'],
                               headers['server'], headers['cache-control'], host=host)
-        elif headers['nts'] == 'ssdp:byebye':
+        elif headers['nts'].strip() == 'ssdp:byebye':
             if self.isKnown(headers['usn']):
                 self.unRegister(headers['usn'])
         else:
-            self.warning('Unknown subtype %s for notification type %s' %
-                    (headers['nts'], headers['nt']))
+            self.warning('Unknown subtype %s for notification type %s (%s)' %
+                    (headers['nts'], headers['nt'], headers))
         louie.send('Coherence.UPnP.Log', None, 'SSDP', host, 'Notify %s for %s' % (headers['nts'], headers['usn']))
 
 

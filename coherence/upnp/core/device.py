@@ -253,15 +253,8 @@ class Device(log.Loggable):
         except:
             pass
 
-        try:
-            satipns = "urn:ses-com:satip"
-            self.satipcap = d.findtext('./{%s}X_SATIPCAP' % satipns)
-        except:
-            pass
-#PANASONIC MESSED IT UP!
-        if not self.satipcap:
+        for satipns in ("urn:ses-com:satip", "urn-ses-com:satip"):
             try:
-                satipns = "urn-ses-com:satip"
                 self.satipcap = d.findtext('./{%s}X_SATIPCAP' % satipns)
             except:
                 pass

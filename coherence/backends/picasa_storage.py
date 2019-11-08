@@ -34,8 +34,8 @@ class PicasaProxy(ReverseProxyUriResource):
         ReverseProxyUriResource.__init__(self, uri)
 
     def render(self, request):
-        if request.received_headers.has_key('referer'):
-            del request.received_headers['referer']
+        if request.responseHeaders.has_key('referer'):
+            del request.responseHeaders['referer']
         return ReverseProxyUriResource.render(self, request)
 
 class PicasaPhotoItem(BackendItem):

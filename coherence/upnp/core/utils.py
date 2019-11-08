@@ -402,9 +402,9 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
         # RFC 2616 tells us that we can omit the port if it's the default port,
         # but we have to provide it otherwise
         if self.port == 80:
-            request.received_headers['host'] = self.host
+            request.responseHeaders['host'] = self.host
         else:
-            request.received_headers['host'] = "%s:%d" % (self.host, self.port)
+            request.responseHeaders['host'] = "%s:%d" % (self.host, self.port)
         request.content.seek(0, 0)
         qs = urlparse.urlparse(request.uri)[4]
         if qs == '':

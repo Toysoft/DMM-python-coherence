@@ -25,7 +25,7 @@ class ProxyGallery2Image(ReverseProxyUriResource):
         ReverseProxyUriResource.__init__(self, uri)
 
     def render(self, request):
-        del request.received_headers['referer']
+        del request.responseHeaders['referer']
         return ReverseProxyUriResource.render(self, request)
 
 

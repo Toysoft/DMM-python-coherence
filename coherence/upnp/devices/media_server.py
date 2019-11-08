@@ -324,7 +324,7 @@ class MSRoot(resource.Resource, log.Loggable):
                     self.warning('%s request with content-length %s header - sanitizing' % (
                                     request.method,
                                     headers['content-length']))
-                    del request.received_headers['content-length']
+                    del request.responseHeaders['content-length']
                 self.debug('data', )
                 if len(request.content.getvalue()) > 0:
                     """ shall we remove that?
