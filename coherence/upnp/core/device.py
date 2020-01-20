@@ -256,6 +256,8 @@ class Device(log.Loggable):
         for satipns in ("urn:ses-com:satip", "urn-ses-com:satip"):
             try:
                 self.satipcap = d.findtext('./{%s}X_SATIPCAP' % satipns)
+                if self.satipcap:
+                    break
             except:
                 pass
         icon_list = d.find('./{%s}iconList' % ns)
