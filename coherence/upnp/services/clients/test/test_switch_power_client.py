@@ -9,6 +9,7 @@
 Test cases for L{upnp.services.clients.switch_power_client}
 """
 
+from __future__ import absolute_import
 import os
 
 from twisted.trial import unittest

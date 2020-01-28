@@ -7,6 +7,7 @@
 # Copyright 2007, Frank Scholz <coherence@beebits.net>
 # Copyright 2009-2010, Jean-Michel Sizun <jmDOTsizunATfreeDOTfr>
 
+from __future__ import absolute_import
 from twisted.internet import defer,reactor
 from twisted.python.failure import Failure
 from twisted.web import server
@@ -23,7 +24,8 @@ from coherence.extern.simple_plugin import Plugin
 from coherence import log
 from coherence.backend import BackendItem, BackendStore, Container, LazyContainer, AbstractBackendStore
 
-from urlparse import urlsplit
+from six.moves.urllib.parse import urlsplit
+from six.moves import map
 
 SHOUTCAST_WS_URL = 'http://www.shoutcast.com/sbin/newxml.phtml'
 
@@ -130,7 +132,7 @@ class PlaylistStreamProxy(utils.ReverseProxyUriResource, log.Loggable):
         if request.clientproto == 'HTTP/1.1':
             self.connection = request.getHeader('connection')
             if self.connection:
-                tokens = map(str.lower, self.connection.split(' '))
+                tokens = list(map(str.lower, self.connection.split(' ')))
                 if 'close' in tokens:
                     d = request.notifyFinish()
                     d.addBoth(self.requestFinished)
@@ -218,7 +220,7 @@ class IRadioStore(AbstractBackendStore):
     def append_genre(self, parent, genre):
         if genre in useless_genres:
             return None
-        if synonym_genres.has_key(genre):
+        if genre in synonym_genres:
             same_genres = synonym_genres[genre]
         else:
             same_genres = [genre]
@@ -267,7 +269,7 @@ class IRadioStore(AbstractBackendStore):
             parent.childrenRetrievingNeeded = True
         url = '%s?genre=%s' % (self.shoutcast_ws_url, genre)
 
-        if genre_families.has_key(genre):
+        if genre in genre_families:
             family_genres = genre_families[genre]
             for family_genre in family_genres:
                 self.append_genre(parent, family_genre)
@@ -352,7 +354,7 @@ class IRadioStore(AbstractBackendStore):
                     main_synonym_genre[name] = name
 
             for main_genre, sub_genres in genres.items():
-                if not self.genre_parent_items.has_key(main_genre):
+                if main_genre not in self.genre_parent_items:
                     genre_families["Misc"].append(main_genre)
             
             self.init_completed()                

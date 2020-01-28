@@ -9,13 +9,16 @@
     icons taken from the Tango Desktop Project
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os.path
-import urllib
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 
 import traceback
 
 
 import pygtk
+import six
 pygtk.require("2.0")
 import gtk
 import gobject
@@ -127,7 +130,7 @@ class DeviceExportWidget(object):
 
     def share_cancel(self,button):
         for row in self.filestore:
-            print row
+            print(row)
             if row[1] == self.new_icon:
                 del row
                 continue
@@ -140,7 +143,7 @@ class DeviceExportWidget(object):
             self.root.hide()
 
     def share_files(self,button):
-        print "share_files with", self.uuid
+        print("share_files with", self.uuid)
         folders = []
         for row in self.filestore:
             if row[1] == self.unshared_icon:
@@ -160,13 +163,13 @@ class DeviceExportWidget(object):
         else:
             result = self.coherence.call_plugin(self.uuid,'update_config',{'content':','.join(folders)})
             if result != self.uuid:
-                print "something failed", result
+                print("something failed", result)
         for row in self.filestore:
             row[1] = self.shared_icon
         self.root.hide()
 
     def add_files(self,files):
-        print "add_files", files
+        print("add_files", files)
         for filename in files:
             for row in self.filestore:
                 if os.path.abspath(filename) == row[0]:
@@ -178,12 +181,12 @@ class DeviceExportWidget(object):
         self.filestore.append([os.path.abspath(filename),self.new_icon])
 
     def new_files(self,button):
-        print "new_files"
+        print("new_files")
 
     def remove_files(self,button):
-        print "remove_files"
+        print("remove_files")
         selection = self.fileview.get_selection()
-        print selection
+        print(selection)
         model, selected_rows = selection.get_selected_rows()
         for row_path in selected_rows:
             #model.remove(model.get_iter(row_path))
@@ -267,37 +270,37 @@ class DeviceImportWidget(object):
         self.filestore.append([os.path.abspath(filename)])
 
     def new_files(self,button):
-        print "new_files"
+        print("new_files")
 
     def remove_files(self,button):
-        print "remove_files"
+        print("remove_files")
 
     def import_files(self,button):
-        print "import_files"
+        print("import_files")
         active = self.combobox.get_active()
         if active <= 0:
-            print "no MediaServer selected"
+            print("no MediaServer selected")
             return None
         friendlyname, uuid,_ = self.store[active]
 
         try:
             row = self.filestore[0]
-            print 'import to', friendlyname,os.path.basename(row[0])
+            print('import to', friendlyname,os.path.basename(row[0]))
 
             def success(r):
-                print 'success',r
+                print('success',r)
                 self.filestore.remove(self.filestore.get_iter(0))
                 self.import_files(None)
 
             def reply(r):
-                print 'reply',r['Result'], r['ObjectID']
+                print('reply',r['Result'], r['ObjectID'])
                 from coherence.upnp.core import DIDLLite
 
                 didl = DIDLLite.DIDLElement.fromString(r['Result'])
                 item = didl.getItems()[0]
                 res = item.res.get_matching(['*:*:*:*'], protocol_type='http-get')
                 if len(res) > 0:
-                    print 'importURI',res[0].importUri
+                    print('importURI',res[0].importUri)
                     self.coherence.put_resource(res[0].importUri,row[0],
                                                 reply_handler=success,
                                                 error_handler=self.handle_error)
@@ -322,7 +325,7 @@ class DeviceImportWidget(object):
 
 
     def handle_error(self,error):
-        print error
+        print(error)
 
     def handle_devices_reply(self,devices):
         for device in devices:
@@ -348,11 +351,11 @@ class DeviceImportWidget(object):
             if service_type == 'ContentDirectory':
 
                 def got_icons(r,udn,item):
-                    print 'got_icons', r
+                    print('got_icons', r)
                     for icon in r:
                         ###FIXME, we shouldn't just use the first icon
                         icon_loader = gtk.gdk.PixbufLoader()
-                        icon_loader.write(urllib.urlopen(str(icon['url'])).read())
+                        icon_loader.write(six.moves.urllib.request.urlopen(str(icon['url'])).read())
                         icon_loader.close()
                         icon = icon_loader.get_pixbuf()
                         icon = icon.scale_simple(16,16,gtk.gdk.INTERP_BILINEAR)
@@ -484,7 +487,7 @@ class TreeWidget(object):
                         if(content_format == 'image/jpeg' and
                            'DLNA.ORG_PN=JPEG_TN' in additional_info.split(';')):
                             icon_loader = gtk.gdk.PixbufLoader()
-                            icon_loader.write(urllib.urlopen(str(res.data)).read())
+                            icon_loader.write(six.moves.urllib.request.urlopen(str(res.data)).read())
                             icon_loader.close()
                             icon = icon_loader.get_pixbuf()
                             tooltip.set_icon(icon)
@@ -523,7 +526,7 @@ class TreeWidget(object):
         return 0
 
     def handle_error(self,error):
-        print error
+        print(error)
 
     def handle_devices_reply(self,devices):
         for device in devices:
@@ -582,7 +585,7 @@ class TreeWidget(object):
                         match_iter = search(self.store, self.store.iter_children(iter),
                                         match_func, (ID_COLUMN, container))
                         if match_iter:
-                            print "heureka, we have a change in ", container, ", container needs a reload"
+                            print("heureka, we have a change in ", container, ", container needs a reload")
                             path = self.store.get_path(match_iter)
                             expanded = self.treeview.row_expanded(path)
                             child = self.store.iter_children(match_iter)
@@ -624,7 +627,7 @@ class TreeWidget(object):
                     for icon in r:
                         ###FIXME, we shouldn't just use the first icon
                         icon_loader = gtk.gdk.PixbufLoader()
-                        icon_loader.write(urllib.urlopen(str(icon['url'])).read())
+                        icon_loader.write(six.moves.urllib.request.urlopen(str(icon['url'])).read())
                         icon_loader.close()
                         icon = icon_loader.get_pixbuf()
                         icon = icon.scale_simple(16,16,gtk.gdk.INTERP_BILINEAR)
@@ -633,7 +636,7 @@ class TreeWidget(object):
 
 
                 def reply_subscribe(udn, service, r):
-                    for k,v in r.iteritems():
+                    for k,v in six.iteritems(r):
                         self.state_variable_change(udn,service,k,v)
 
                 s = self.bus.get_object(BUS_NAME+'.service',service)
@@ -683,7 +686,7 @@ class TreeWidget(object):
             url, = self.store.get(iter,SERVICE_COLUMN)
             if url == '':
                 return
-            print "request to play:", title,object_id,url
+            print("request to play:", title,object_id,url)
             if self.cb_item_dbl_click != None:
                 self.cb_item_dbl_click(url)
             return
@@ -753,10 +756,10 @@ class TreeWidget(object):
 
             if(requested_count != int(r['NumberReturned']) and
                int(r['NumberReturned']) < (int(r['TotalMatches'])-starting_index)):
-                print "seems we have been returned only a part of the result"
-                print "requested %d, starting at %d" % (requested_count,starting_index)
-                print "got %d out of %d" % (int(r['NumberReturned']), int(r['TotalMatches']))
-                print "requesting more starting now at %d" % (starting_index+int(r['NumberReturned']))
+                print("seems we have been returned only a part of the result")
+                print("requested %d, starting at %d" % (requested_count,starting_index))
+                print("got %d out of %d" % (int(r['NumberReturned']), int(r['TotalMatches'])))
+                print("requesting more starting now at %d" % (starting_index+int(r['NumberReturned'])))
 
                 self.browse(view,row_path,column,
                             starting_index=starting_index+int(r['NumberReturned']),

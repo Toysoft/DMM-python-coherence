@@ -9,6 +9,7 @@
 Test cases for L{upnp.core.DIDLLite}
 """
 
+from __future__ import absolute_import
 from copy import copy
 
 from twisted.trial import unittest

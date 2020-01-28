@@ -9,6 +9,7 @@
 Test cases for L{dbus_service}
 """
 
+from __future__ import absolute_import
 import os
 
 from twisted.trial import unittest

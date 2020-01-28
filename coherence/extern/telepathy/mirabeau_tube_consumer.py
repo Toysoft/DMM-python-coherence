@@ -3,6 +3,8 @@
 
 # Copyright 2009 Philippe Normand <phil@base-art.net>
 
+from __future__ import absolute_import
+from __future__ import print_function
 from dbus import PROPERTIES_IFACE
 
 from telepathy.interfaces import CHANNEL_TYPE_DBUS_TUBE, CONN_INTERFACE, \
@@ -11,6 +13,7 @@ from telepathy.interfaces import CHANNEL_TYPE_DBUS_TUBE, CONN_INTERFACE, \
 from coherence.extern.telepathy import client, tube
 from coherence.dbus_constants import BUS_NAME, OBJECT_PATH, DEVICE_IFACE, SERVICE_IFACE
 from coherence import dbus_service
+import six
 
 class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
 
@@ -32,7 +35,7 @@ class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
             except KeyError:
                 self.debug("Group %r not in roster...", group)
                 continue
-            for contact_handle, contact in contacts.iteritems():
+            for contact_handle, contact in six.iteritems(contacts):
                 if contact[CONNECTION + "/contact-id"] == initiator:
                     return True
         return False
@@ -78,7 +81,7 @@ class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
                 except KeyError:
                     self.debug("tube with handle %d not registered", handle)
                 else:
-                    for service_iface_name, channel in tube_channels.iteritems():
+                    for service_iface_name, channel in six.iteritems(tube_channels):
                         channel[CHANNEL_INTERFACE].Close()
                     del self._coherence_tubes[handle]
 
@@ -110,7 +113,7 @@ class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
             self.got_devices_callback(devices)
 
         def got_error(exception):
-            print ">>>", exception
+            print(">>>", exception)
 
         pontoon = pontoon_tube.get_object(initiator_bus_name, OBJECT_PATH)
         pontoon.get_devices_async(1, reply_handler=got_devices,

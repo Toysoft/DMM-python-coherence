@@ -5,6 +5,7 @@
 
 # Copyright 2008 Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 import os.path
 
 from twisted.python import util
@@ -19,6 +20,7 @@ import coherence.extern.louie as louie
 
 
 from coherence import log
+import six
 
 
 class DeviceHttpRoot(resource.Resource, log.Loggable):
@@ -29,15 +31,17 @@ class DeviceHttpRoot(resource.Resource, log.Loggable):
         self.server = server
 
     def getChildWithDefault(self, path, request):
+        path = six.ensure_str(path)
         self.info('DeviceHttpRoot %s getChildWithDefault ' % self.server.device_type, path, request.uri, request.client)
         self.info( request.getAllHeaders())
-        if self.children.has_key(path):
+        if path in self.children:
             return self.children[path]
         if request.uri == '/':
             return self
         return self.getChild(path, request)
 
     def getChild(self, name, request):
+        name = six.ensure_str(name)
         self.info('DeviceHttpRoot %s getChild %s ' % (name, request))
         ch = None
         if ch is None:
@@ -119,7 +123,7 @@ class RootDeviceXML(static.Data):
             x2.text = 'M-%s-1.50' %(dt)
 
         if len(dlna_caps) > 0:
-            if isinstance(dlna_caps, basestring):
+            if isinstance(dlna_caps, six.string_types):
                 dlna_caps = [dlna_caps]
             for cap in dlna_caps:
                 x = ET.SubElement(d, 'dlna:X_DLNACAP')
@@ -171,7 +175,7 @@ class RootDeviceXML(static.Data):
             for icon in icons:
 
                 icon_path = ''
-                if icon.has_key('url'):
+                if 'url' in icon:
                     if icon['url'].startswith('file://'):
                         icon_path = icon['url'][7:]
                     elif icon['url'] == '.face':
@@ -198,7 +202,7 @@ class RootDeviceXML(static.Data):
         #if self.has_level(LOG_DEBUG):
         #    indent( root)
 
-        self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring( root, encoding='utf-8')
+        self.xml = six.ensure_binary(ET.tostring( root, encoding='utf8'))
         static.Data.__init__(self, self.xml, 'text/xml')
 
 
@@ -234,7 +238,7 @@ class BasicDeviceMixin(object):
         kwargs['urlbase'] = self.urlbase
         self.icons = kwargs.get('iconlist', kwargs.get('icons', []))
         if len(self.icons) == 0:
-            if kwargs.has_key('icon'):
+            if 'icon' in kwargs:
                 if isinstance(kwargs['icon'],dict):
                     self.icons.append(kwargs['icon'])
                 else:

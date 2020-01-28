@@ -4,7 +4,9 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
-import urllib2
+from __future__ import absolute_import
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
+import six
 import time
 
 from twisted.internet import defer, reactor
@@ -187,11 +189,12 @@ class Device(log.Loggable):
         return dl
 
     def parse_device(self, d):
+        import six
         self.info("parse_device %r" %d)
-        self.device_type = unicode(d.findtext('./{%s}deviceType' % ns))
+        self.device_type = six.ensure_str(d.findtext('./{%s}deviceType' % ns))
         self.friendly_device_type, self.device_type_version = \
                 self.device_type.split(':')[-2:]
-        self.friendly_name = unicode(d.findtext('./{%s}friendlyName' % ns))
+        self.friendly_name = six.ensure_str(d.findtext('./{%s}friendlyName' % ns))
         self.udn = d.findtext('./{%s}UDN' % ns)
         self.info("found udn %r %r" % (self.udn,self.friendly_name))
 
@@ -262,8 +265,8 @@ class Device(log.Loggable):
                 pass
         icon_list = d.find('./{%s}iconList' % ns)
         if icon_list is not None:
-            import urllib2
-            url_base = "%s://%s" % urllib2.urlparse.urlparse(self.get_location())[:2]
+            import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
+            url_base = "%s://%s" % six.moves.urllib.parse.urlparse(self.get_location())[:2]
             for icon in icon_list.findall('./{%s}icon' % ns):
                 try:
                     i = {}
@@ -576,12 +579,12 @@ class RootDevice(Device):
     def make_fullyqualified(self,url):
         if url.startswith('http://'):
             return url
-        import urlparse
+        import six.moves.urllib.parse
         base = self.get_urlbase()
         if base:
             if base[-1] != '/':
                 base += '/'
-            r = urlparse.urljoin(base,url)
+            r = six.moves.urllib.parse.urljoin(base,url)
         else:
-            r = urlparse.urljoin(self.get_location(),url)
+            r = six.moves.urllib.parse.urljoin(self.get_location(),url)
         return r

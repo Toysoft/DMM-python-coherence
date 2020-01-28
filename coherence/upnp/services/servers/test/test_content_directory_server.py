@@ -9,6 +9,7 @@
 Test cases for L{upnp.services.servers.content_directory_server}
 """
 
+from __future__ import absolute_import
 import os
 
 from twisted.trial import unittest

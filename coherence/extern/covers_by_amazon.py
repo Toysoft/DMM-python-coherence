@@ -40,15 +40,18 @@ again.
 
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
-import urllib
-import StringIO
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+from io import StringIO
 
 from twisted.internet import reactor
 from twisted.internet import defer
 from twisted.web import client
 
-from et import parse_xml
+from .et import parse_xml
+import six
 
 aws_server = { 'de': 'de',
                'jp': 'jp',
@@ -160,27 +163,27 @@ class CoverGetter(object):
 
         def sanitize(s):
             if s is not None:
-                s = unicode(s.lower())
-                s = s.replace(unicode(u'ä'),unicode('ae'))
-                s = s.replace(unicode(u'ö'),unicode('oe'))
-                s = s.replace(unicode(u'ü'),unicode('ue'))
-                s = s.replace(unicode(u'ß'),unicode('ss'))
-                if isinstance(s,unicode):
+                s = six.text_type(s.lower())
+                s = s.replace(six.text_type(u'ä'),six.text_type('ae'))
+                s = s.replace(six.text_type(u'ö'),six.text_type('oe'))
+                s = s.replace(six.text_type(u'ü'),six.text_type('ue'))
+                s = s.replace(six.text_type(u'ß'),six.text_type('ss'))
+                if isinstance(s,six.text_type):
                     s = s.encode('ascii','ignore')
                 else:
                     s = s.decode('utf-8').encode('ascii','ignore')
             return s
 
         if asin != None:
-            query = aws_asin_query + '&ItemId=%s' % urllib.quote(asin)
+            query = aws_asin_query + '&ItemId=%s' % six.moves.urllib.parse.quote(asin)
         elif (artist is not None or title is not None):
             query = aws_artist_query
             if artist is not None:
                 artist = sanitize(artist)
-                query = '&'.join((query, 'Artist=%s' % urllib.quote(artist)))
+                query = '&'.join((query, 'Artist=%s' % six.moves.urllib.parse.quote(artist)))
             if title is not None:
                 title = sanitize(title)
-                query = '&'.join((query, 'Title=%s' % urllib.quote(title)))
+                query = '&'.join((query, 'Title=%s' % six.moves.urllib.parse.quote(title)))
         else:
             raise KeyError("Please supply either asin, title or artist and title arguments")
         url = self.server+self.aws_base_query+aws_response_group+query
@@ -200,13 +203,13 @@ class CoverGetter(object):
             try:
                 import Image
 
-                im = Image.open(StringIO.StringIO(result))
+                im = Image.open(StringIO(result))
                 name,file_ext =  os.path.splitext(self.filename)
                 self.filename = name + convert_to
 
                 im.save(self.filename)
             except ImportError:
-                print "we need the Python Imaging Library to do image conversion"
+                print("we need the Python Imaging Library to do image conversion")
 
         if self.filename == None:
             data = result
@@ -286,7 +289,7 @@ class CoverGetter(object):
                     self._errcall()
 
     def got_error(self, failure, url):
-        print "got_error", failure, url
+        print("got_error", failure, url)
 
 if __name__ == '__main__':
 
@@ -302,17 +305,17 @@ if __name__ == '__main__':
     options = Options()
     try:
         options.parseOptions()
-    except usage.UsageError, errortext:
+    except usage.UsageError as errortext:
         import sys
-        print '%s: %s' % (sys.argv[0], errortext)
-        print '%s: Try --help for usage details.' % (sys.argv[0])
+        print('%s: %s' % (sys.argv[0], errortext))
+        print('%s: Try --help for usage details.' % (sys.argv[0]))
         sys.exit(1)
 
     def got_it(filename, *args, **kwargs):
-        print "Mylady, it is an image and its name is", filename, args, kwargs
+        print("Mylady, it is an image and its name is", filename, args, kwargs)
 
     aws_key = '1XHSE4FQJ0RK0X3S9WR2'
-    print options['asin'],options['artist'],options['title']
+    print(options['asin'],options['artist'],options['title'])
     if len(options['asin']):
         reactor.callWhenRunning(CoverGetter,options['filename'],aws_key, callback=got_it,asin=options['asin'])
     elif len(options['artist']) and len(options['title']):

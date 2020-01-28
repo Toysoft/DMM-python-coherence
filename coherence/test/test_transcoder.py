@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
 from twisted.trial.unittest import TestCase
 
 from coherence.transcoder import TranscoderManager, get_transcoder_name

@@ -5,8 +5,10 @@
 # Copyright 2008, Frank Scholz <coherence@beebits.net>
 
 
+from __future__ import absolute_import
+from __future__ import print_function
 from datetime import datetime
-import urllib
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 
 from twisted.internet import reactor, defer
 from twisted.python import failure, util
@@ -21,6 +23,7 @@ import dbus.service
 import coherence.extern.louie as louie
 
 from coherence.backend import BackendItem, BackendStore
+import six
 
 ROOT_CONTAINER_ID = 0
 
@@ -55,7 +58,7 @@ class Container(BackendItem):
 
     def add_child(self, child):
         id = child.id
-        if isinstance(child.id, basestring):
+        if isinstance(child.id, six.string_types):
             _,id = child.id.split('.')
         self.children[id] = child
         if self.item.childCount != None:
@@ -67,7 +70,7 @@ class Container(BackendItem):
         if callable(self.children):
             return self.children(start,end-start)
         else:
-            children = self.children.values()
+            children = list(self.children.values())
         if end == 0:
             return children[start:]
         else:
@@ -110,8 +113,8 @@ class Channel(BackendItem):
         self.parent_id = parent_id
         self.real_id = id
     
-        self.name = unicode(name)
-        self.network = unicode(network)
+        self.name = six.text_type(name)
+        self.network = six.text_type(network)
         self.stream_url = url
         self.mimetype = str(mimetype)
 
@@ -151,19 +154,19 @@ class Recording(BackendItem):
         self.parent_id = parent_id
         self.real_id = id
     
-        path = unicode(file)
+        path = six.text_type(file)
         # make sure path is an absolute local path (and not an URL)
         if path.startswith("file://"):
         		path = path[7:]
         self.location = FilePath(path)
 
-        self.title = unicode(title)
+        self.title = six.text_type(title)
         self.mimetype = str(mimetype)
         self.date = datetime.fromtimestamp(int(date))
         self.duration = int(duration)
         try:
             self.size = self.location.getsize()
-        except Exception, msg:
+        except Exception as msg:
             self.size = 0
         self.bitrate = 0
         self.url = self.store.urlbase + str(self.id)
@@ -194,7 +197,7 @@ class Recording(BackendItem):
         item.res.append(res)
 
         # add internal resource
-        res = DIDLLite.Resource('file://'+ urllib.quote(self.get_path()), 'internal:%s:%s:*' % (self.store.server.coherence.hostname,self.mimetype))
+        res = DIDLLite.Resource('file://'+ six.moves.urllib.parse.quote(self.get_path()), 'internal:%s:%s:*' % (self.store.server.coherence.hostname,self.mimetype))
         if self.size > 0:
             res.size = self.size
         if self.duration > 0:
@@ -291,7 +294,7 @@ class DVBDStore(BackendStore):
 
     def get_by_id(self,id):
         self.info("looking for id %r", id)
-        if isinstance(id, basestring):
+        if isinstance(id, six.string_types):
             id = id.split('@',1)
             id = id[0]
 
@@ -489,7 +492,7 @@ class DVBDStore(BackendStore):
             for result,channel in results:
                 #print channel
                 if result == True:
-                    name = unicode(channel['name'], errors='ignore')
+                    name = six.text_type(channel['name'], errors='ignore')
                     #print "add", name, channel['url']
                     video_item = Channel(self,
                                          channel['id'],
@@ -600,7 +603,7 @@ class DVBDStore(BackendStore):
             return failure.Failure(errorCode(701))
 
         def handle_success(deleted):
-            print 'deleted', deleted, kwargs['ObjectID']
+            print('deleted', deleted, kwargs['ObjectID'])
             if deleted == False:
                 return failure.Failure(errorCode(715))
             return {}

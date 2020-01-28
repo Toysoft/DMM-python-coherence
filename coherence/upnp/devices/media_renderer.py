@@ -5,6 +5,7 @@
 
 # Copyright 2006,2007 Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 import os.path
 
 from twisted.internet import task
@@ -66,21 +67,21 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
         try:
             self.connection_manager_server = ConnectionManagerServer(self)
             self._services.append(self.connection_manager_server)
-        except LookupError,msg:
+        except LookupError as msg:
             self.warning( 'ConnectionManagerServer', msg)
             raise LookupError(msg)
 
         try:
             self.rendering_control_server = RenderingControlServer(self)
             self._services.append(self.rendering_control_server)
-        except LookupError,msg:
+        except LookupError as msg:
             self.warning( 'RenderingControlServer', msg)
             raise LookupError(msg)
 
         try:
             self.av_transport_server = AVTransportServer(self)
             self._services.append(self.av_transport_server)
-        except LookupError,msg:
+        except LookupError as msg:
             self.warning( 'AVTransportServer', msg)
             raise LookupError(msg)
 
@@ -128,7 +129,7 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
         self.web_resource.putChild('AVTransport', self.av_transport_server)
 
         for icon in self.icons:
-            if icon.has_key('url'):
+            if 'url' in icon:
                 if icon['url'].startswith('file://'):
                     if os.path.exists(icon['url'][7:]):
                         self.web_resource.putChild(os.path.basename(icon['url']),

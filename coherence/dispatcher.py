@@ -1,5 +1,7 @@
 
+from __future__ import absolute_import
 from twisted.internet import defer
+import six
 
 class Receiver(object):
     def __init__(self, signal, callback, args, kwargs):
@@ -24,7 +26,7 @@ class Receiver(object):
                         ['%r' % x for x in self.arguments]
                         ),
                 ', '.join(
-                        ['%s=%s' % (x, y) for x, y in self.keywords.iteritems()]
+                        ['%s=%s' % (x, y) for x, y in six.iteritems(self.keywords)]
                         )
                 )
 
@@ -36,7 +38,7 @@ class Dispatcher(object):
 
     def __init__(self):
         self.receivers = {}
-        for signal in self.__signals__.iterkeys():
+        for signal in six.iterkeys(self.__signals__):
             self.receivers[signal] = []
 
     def connect(self, signal, callback, *args, **kw):
@@ -67,7 +69,7 @@ class Dispatcher(object):
         for receiver in self._get_receivers(signal):
             try:
                 results.append((receiver, receiver(*args, **kwargs)))
-            except Exception, e:
+            except Exception as e:
                 errors.append((receiver, e))
 
         return results, errors

@@ -2,6 +2,8 @@
     Wrapper module for the louie implementation
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import warnings
 from coherence.dispatcher import Dispatcher
 
@@ -60,7 +62,7 @@ def disconnect(receiver, signal=All, sender=Any, weak=True):
         receiver = _global_receivers_pool.pop(key)
         return _global_dispatcher.disconnect(receiver)
     else:
-        print warnings.warn("louie - cannot disconnect %s" %(key,))
+        print(warnings.warn("louie - cannot disconnect %s" %(key,)))
         return
 
 

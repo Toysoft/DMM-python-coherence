@@ -4,6 +4,7 @@
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 # Connection Manager service
+from __future__ import absolute_import
 import time
 
 from twisted.web import resource
@@ -18,6 +19,7 @@ from coherence.upnp.core import service
 from coherence.upnp.core.DIDLLite  import build_dlna_additional_info
 
 from coherence import log
+import six
 
 
 class ConnectionManagerControl(service.ServiceControl,UPnPPublisher):
@@ -188,7 +190,7 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
     def set_variable(self, instance, variable_name, value, default=False):
         if(variable_name == 'SourceProtocolInfo' or
            variable_name == 'SinkProtocolInfo'):
-            if isinstance(value,basestring) and len(value) > 0:
+            if isinstance(value,six.string_types) and len(value) > 0:
                 value = [v.strip() for v in value.split(',')]
             without_dlna_tags = []
             for v in value:

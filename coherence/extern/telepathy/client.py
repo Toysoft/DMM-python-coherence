@@ -3,6 +3,8 @@
 
 # Copyright 2009 Philippe Normand <phil@base-art.net>
 
+from __future__ import absolute_import
+from __future__ import print_function
 import time
 
 import dbus.glib
@@ -26,6 +28,7 @@ from coherence.extern.telepathy.connect import tp_connect
 from coherence import log
 
 from twisted.internet import defer
+import six
 
 TUBE_STATE = {TUBE_CHANNEL_STATE_LOCAL_PENDING : 'local pending',
               TUBE_CHANNEL_STATE_REMOTE_PENDING : 'remote pending',
@@ -77,7 +80,7 @@ class Client(log.Loggable):
         if not self.existing_client:
             try:
                 self.conn[CONNECTION].Disconnect()
-            except Exception, exc:
+            except Exception as exc:
                 self.warning("Error while disconnecting: %s", exc)
 
     def ready_cb(self, conn):
@@ -93,7 +96,7 @@ class Client(log.Loggable):
                                             error_handler=self.error_cb)
 
     def error_cb(self, error):
-        print "Error:", error
+        print("Error:", error)
 
     def status_changed_cb(self, status, reason):
         self.debug("status changed to %r: %r", status, reason)
@@ -147,7 +150,7 @@ class Client(log.Loggable):
                     self.parent.join_muc()
 
         def no_channel_available(error):
-            print error
+            print(error)
 
         for name in ('subscribe', 'publish'):
             conn[CONNECTION_INTERFACE_REQUESTS].EnsureChannel({
@@ -174,7 +177,7 @@ class Client(log.Loggable):
             self._text_channel_available()
             self.new_channels_cb(self.existing_client._channels)
             self._tubes = self.existing_client._pending_tubes
-            for path, tube in self._tubes.iteritems():
+            for path, tube in six.iteritems(self._tubes):
                 self.connect_tube_signals(tube)
                 self.got_tube(tube)
         else:
@@ -303,7 +306,7 @@ class Client(log.Loggable):
                 self.send_message(target_handle, message)
 
             def got_error(exception):
-                print exception
+                print(exception)
 
             conn_iface.CreateChannel(params, reply_handler=got_channel, error_handler=got_error)
         else:
@@ -320,4 +323,4 @@ class Client(log.Loggable):
                                                             error_handler=self.error_cb)
 
     def send_message_cb (self, token):
-        print "Sending message with token %s" % token
+        print("Sending message with token %s" % token)

@@ -5,17 +5,18 @@
 
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os, stat, glob
 import tempfile
 import shutil
 import time
 import re
 from datetime import datetime
-import urllib
-
-from sets import Set
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 
 import mimetypes
+import six
 mimetypes.init()
 mimetypes.add_type('audio/x-m4a', '.m4a')
 mimetypes.add_type('audio/x-musepack', '.mpc')
@@ -26,7 +27,7 @@ mimetypes.add_type('video/divx', '.divx')
 mimetypes.add_type('video/divx', '.avi')
 mimetypes.add_type('video/x-matroska', '.mkv')
 
-from urlparse import urlsplit
+from six.moves.urllib.parse import urlsplit
 
 from twisted.python.filepath import FilePath
 from twisted.python import failure
@@ -43,7 +44,7 @@ try:
     from coherence.extern.inotify import IN_CREATE, IN_DELETE, IN_MOVED_FROM, IN_MOVED_TO, IN_ISDIR
     from coherence.extern.inotify import IN_CHANGED
     haz_inotify = True
-except Exception,msg:
+except Exception as msg:
     haz_inotify = False
     no_inotify_reason = msg
 
@@ -93,10 +94,10 @@ class FSItem(BackendItem):
         if parent:
             parent.add_child(self,update=update)
         if mimetype == 'root':
-            self.location = unicode(path)
+            self.location = six.text_type(path)
         else:
             if mimetype == 'item' and path is None:
-                path = os.path.join(parent.get_realpath(),unicode(self.id))
+                path = os.path.join(parent.get_realpath(),six.text_type(self.id))
             #self.location = FilePath(unicode(path))
             self.location = FilePath(path)
         self.mimetype = mimetype
@@ -166,7 +167,7 @@ class FSItem(BackendItem):
                     #self.item.res.append(new_res)
 
             if mimetype != 'item':
-                res = Resource('file://'+ urllib.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
+                res = Resource('file://'+ six.moves.urllib.parse.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
                 res.size = size
                 self.item.res.append(res)
 
@@ -304,7 +305,7 @@ class FSItem(BackendItem):
         else:
             host = host_port
 
-        res = Resource('file://'+urllib.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
+        res = Resource('file://'+six.moves.urllib.parse.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
         try:
             res.size = self.location.getsize()
         except:
@@ -465,7 +466,7 @@ class FSStore(BackendStore):
         self.name = kwargs.get('name','my media')
         self.content = kwargs.get('content',None)
         if self.content != None:
-                if isinstance(self.content,basestring):
+                if isinstance(self.content,six.string_types):
                     self.content = [self.content]
                 l = []
                 for a in self.content:
@@ -478,7 +479,7 @@ class FSStore(BackendStore):
             self.content = 'tests/content'
         if not isinstance( self.content, list):
             self.content = [self.content]
-        self.content = Set([os.path.abspath(x) for x in self.content])
+        self.content = set([os.path.abspath(x) for x in self.content])
         ignore_patterns = kwargs.get('ignore_patterns',[])
         self.store = {}
 
@@ -488,7 +489,7 @@ class FSStore(BackendStore):
             if haz_inotify == True:
                 try:
                     self.inotify = INotify()
-                except Exception,msg:
+                except Exception as msg:
                     self.info("%s" %msg)
             else:
                 self.info("%s" %no_inotify_reason)
@@ -528,7 +529,7 @@ class FSStore(BackendStore):
             try:
                 path = path.encode('utf-8') # patch for #267
                 self.walk(path, parent, self.ignore_file_pattern)
-            except Exception,msg:
+            except Exception as msg:
                 self.warning('on walk of %r: %r' % (path,msg))
                 import traceback
                 self.debug(traceback.format_exc())
@@ -554,7 +555,7 @@ class FSStore(BackendStore):
     def get_by_id(self,id):
         #print "get_by_id", id, type(id)
         # we have referenced ids here when we are in WMC mapping mode
-        if isinstance(id, basestring):
+        if isinstance(id, six.string_types):
             id = id.split('@',1)
             id = id[0]
         #try:
@@ -600,13 +601,13 @@ class FSStore(BackendStore):
 
 
     def update_config(self,**kwargs):
-        print "update_config", kwargs
+        print("update_config", kwargs)
         if 'content' in kwargs:
             new_content = kwargs['content']
-            new_content = Set([os.path.abspath(x) for x in new_content.split(',')])
+            new_content = set([os.path.abspath(x) for x in new_content.split(',')])
             new_folders = new_content.difference(self.content)
             obsolete_folders = self.content.difference(new_content)
-            print new_folders, obsolete_folders
+            print(new_folders, obsolete_folders)
             for folder in obsolete_folders:
                 self.remove_content_folder(folder)
             for folder in new_folders:
@@ -701,14 +702,14 @@ class FSStore(BackendStore):
                     mask = IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO | IN_CHANGED
                     self.inotify.watch(path, mask=mask, auto_add=False, callbacks=(self.notify,id))
                 return self.store[id]
-        except OSError, msg:
+        except OSError as msg:
             """ seems we have some permissions issues along the content path """
             self.warning("path %r isn't accessible, error %r", path, msg)
 
         return None
 
     def remove(self, id):
-        print 'FSSTore remove id', id
+        print('FSSTore remove id', id)
         try:
             item = self.store[id]
             parent = item.get_parent()
@@ -773,7 +774,7 @@ class FSStore(BackendStore):
             return 200
         except IOError:
             self.warning("import of file %s failed" % item.get_path())
-        except Exception,msg:
+        except Exception as msg:
             import traceback
             self.warning(traceback.format_exc())
         return 500
@@ -947,11 +948,11 @@ class FSStore(BackendStore):
         if item == None:
             return failure.Failure(errorCode(701))
 
-        print "upnp_DestroyObject", item.location
+        print("upnp_DestroyObject", item.location)
         try:
             item.location.remove()
-        except Exception, msg:
-            print Exception, msg
+        except Exception as msg:
+            print(Exception, msg)
             return failure.Failure(errorCode(715))
 
         return {}
@@ -964,14 +965,14 @@ if __name__ == '__main__':
     p = 'tests/content'
     f = FSStore(None,name='my media',content=p, urlbase='http://localhost/xyz')
 
-    print f.len()
-    print f.get_by_id(1000).child_count, f.get_by_id(1000).get_xml()
-    print f.get_by_id(1001).child_count, f.get_by_id(1001).get_xml()
-    print f.get_by_id(1002).child_count, f.get_by_id(1002).get_xml()
-    print f.get_by_id(1003).child_count, f.get_by_id(1003).get_xml()
-    print f.get_by_id(1004).child_count, f.get_by_id(1004).get_xml()
-    print f.get_by_id(1005).child_count, f.get_by_id(1005).get_xml()
-    print f.store[1000].get_children(0,0)
+    print(f.len())
+    print(f.get_by_id(1000).child_count, f.get_by_id(1000).get_xml())
+    print(f.get_by_id(1001).child_count, f.get_by_id(1001).get_xml())
+    print(f.get_by_id(1002).child_count, f.get_by_id(1002).get_xml())
+    print(f.get_by_id(1003).child_count, f.get_by_id(1003).get_xml())
+    print(f.get_by_id(1004).child_count, f.get_by_id(1004).get_xml())
+    print(f.get_by_id(1005).child_count, f.get_by_id(1005).get_xml())
+    print(f.store[1000].get_children(0,0))
     #print f.upnp_Search(ContainerID ='4',
     #                    Filter ='dc:title,upnp:artist',
     #                    RequestedCount = '1000',

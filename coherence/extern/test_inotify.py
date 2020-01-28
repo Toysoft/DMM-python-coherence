@@ -6,11 +6,14 @@
 # renamed watch() kwarg autoAdd back to auto_add, to not break
 # existing applications
 
+from __future__ import absolute_import
+from __future__ import print_function
 from twisted.internet import defer, reactor
 from twisted.python import filepath
 from twisted.trial import unittest
 
-import inotify
+from . import inotify
+import six
 
 class TestINotify(unittest.TestCase):
     def setUp(self):
@@ -45,7 +48,7 @@ class TestINotify(unittest.TestCase):
                     d.callback(None)
                 elif len(calls) == 1:
                     self.assert_(mask & inotify.IN_CREATE)
-            except Exception, e:
+            except Exception as e:
                 d.errback(e)
 
         self.inotify.watch(
@@ -70,7 +73,7 @@ class TestINotify(unittest.TestCase):
                 try:
                     self.assert_(self.inotify.isWatched(SUBDIR.path))
                     d.callback(None)
-                except Exception, e:
+                except Exception as e:
                     d.errback(e)
             reactor.callLater(0, _)
 
@@ -97,16 +100,16 @@ class TestINotify(unittest.TestCase):
                 try:
                     self.assert_(self.inotify.isWatched(SUBDIR.path))
                     SUBDIR.remove()
-                except Exception, e:
-                    print e
+                except Exception as e:
+                    print(e)
                     d.errback(e)
             def _eb():
                 # second call, we have just removed the subdir
                 try:
                     self.assert_(not self.inotify.isWatched(SUBDIR.path))
                     d.callback(None)
-                except Exception, e:
-                    print e
+                except Exception as e:
+                    print(e)
                     d.errback(e)
 
             if not calls:
@@ -152,7 +155,7 @@ class TestINotify(unittest.TestCase):
         """
         Test the helper function
         """
-        for mask, value in inotify._FLAG_TO_HUMAN.iteritems():
+        for mask, value in six.iteritems(inotify._FLAG_TO_HUMAN):
             self.assert_(inotify.flag_to_human(mask)[0], value)
 
         checkMask = inotify.IN_CLOSE_WRITE|inotify.IN_ACCESS|inotify.IN_OPEN
@@ -188,7 +191,7 @@ class TestINotify(unittest.TestCase):
                 try:
                     self.assert_(not self.inotify.isWatched(SUBDIR.path))
                     d.callback(None)
-                except Exception, e:
+                except Exception as e:
                     d.errback(e)
             reactor.callLater(0, _)
 
@@ -227,7 +230,7 @@ class TestINotify(unittest.TestCase):
                     )
                     self.assert_(len(calls), len(CREATED))
                     self.assertEquals(calls, CREATED)
-                except Exception, e:
+                except Exception as e:
                     d.errback(e)
                 else:
                     d.callback(None)

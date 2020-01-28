@@ -7,11 +7,14 @@
 
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import time
-import urllib, urlparse
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error, six.moves.urllib.parse
 
 #import gtk
 import dbus
+import six
 
 if dbus.__version__ < '0.82.2':
     raise ImportError('dbus-python module too old, pls get a newer one from http://dbus.freedesktop.org/releases/dbus-python/')
@@ -129,9 +132,9 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
                     if len(v) > 0:
                         lc[str(instance)] = v
                 if len(lc) > 0:
-                    data[unicode(n.name)] = lc
+                    data[six.text_type(n.name)] = lc
             else:
-                data[unicode(n.name)] = unicode(n.value)
+                data[six.text_type(n.name)] = six.text_type(n.value)
         return self.dbus_device.device.get_id(), self.type, dbus.Dictionary(data,signature='sv',variant_level=3)
 
     @dbus.service.method(CDS_SERVICE,in_signature='',out_signature='s',
@@ -142,7 +145,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         if r == '':
             return r
         def convert_reply(data):
-            dbus_async_cb(unicode(data['SearchCaps']))
+            dbus_async_cb(six.text_type(data['SearchCaps']))
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
@@ -154,7 +157,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         if r == '':
             return r
         def convert_reply(data):
-            dbus_async_cb(unicode(data['SortCaps']))
+            dbus_async_cb(six.text_type(data['SortCaps']))
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
@@ -166,7 +169,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         if r == '':
             return r
         def convert_reply(data):
-            dbus_async_cb(unicode(data['SortExtensionCaps']))
+            dbus_async_cb(six.text_type(data['SortExtensionCaps']))
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
@@ -178,7 +181,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         if r == '':
             return r
         def convert_reply(data):
-            dbus_async_cb(unicode(data['FeatureList']))
+            dbus_async_cb(six.text_type(data['FeatureList']))
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
@@ -199,12 +202,12 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
     def Browse(self,ObjectID, BrowseFlag, Filter, StartingIndex, RequestedCount,SortCriteria,
                     dbus_async_cb,dbus_async_err_cb):
 
-        arguments = {'ObjectID':unicode(ObjectID),
-                     'BrowseFlag':unicode(BrowseFlag),
-                     'Filter':unicode(Filter),
+        arguments = {'ObjectID':six.text_type(ObjectID),
+                     'BrowseFlag':six.text_type(BrowseFlag),
+                     'Filter':six.text_type(Filter),
                      'StartingIndex':int(StartingIndex),
                      'RequestedCount':int(RequestedCount),
-                     'SortCriteria':unicode(SortCriteria)}
+                     'SortCriteria':six.text_type(SortCriteria)}
         r = self.callAction('Browse',arguments)
         if r == '':
             return r
@@ -221,7 +224,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
                 for child in item:
                     if un_namespace(child.tag) == 'DIDL-Lite:res':
                         res_dict = dbus.Dictionary({},signature='sv')
-                        res_dict['url'] = unicode(child.text)
+                        res_dict['url'] = six.text_type(child.text)
                         for k,v in child.attrib.items():
                             res_dict[un_namespace(k)] = v
                         res.append(res_dict)
@@ -243,12 +246,12 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
     def Search(self,ContainerID,SearchCriteria,Filter,StartingIndex,RequestedCount,SortCriteria,
                     dbus_async_cb,dbus_async_err_cb):
 
-        arguments = {'ContainerID':unicode(ContainerID),
-                     'SearchCriteria':unicode(SearchCriteria),
-                     'Filter':unicode(Filter),
+        arguments = {'ContainerID':six.text_type(ContainerID),
+                     'SearchCriteria':six.text_type(SearchCriteria),
+                     'Filter':six.text_type(Filter),
                      'StartingIndex':int(StartingIndex),
                      'RequestedCount':int(RequestedCount),
-                     'SortCriteria':unicode(SortCriteria)}
+                     'SortCriteria':six.text_type(SortCriteria)}
         r = self.callAction('Search',arguments)
         if r == '':
             return r
@@ -266,7 +269,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
                 for child in item:
                     if un_namespace(child.tag) == 'DIDL-Lite:res':
                         res_dict = dbus.Dictionary({},signature='sv')
-                        res_dict['url'] = unicode(child.text)
+                        res_dict['url'] = six.text_type(child.text)
                         for k,v in child.attrib.items():
                             res_dict[un_namespace(k)] = v
                         res.append(res_dict)
@@ -289,13 +292,13 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
     def CreateObject(self,ContainerID,Elements,
                     dbus_async_cb,dbus_async_err_cb):
 
-        arguments = {'ContainerID':unicode(ContainerID),
-                     'Elements':unicode(Elements)}
+        arguments = {'ContainerID':six.text_type(ContainerID),
+                     'Elements':six.text_type(Elements)}
         r = self.callAction('CreateObject',arguments)
         if r == '':
             return r
         def convert_reply(data):
-            dbus_async_cb(unicode(data['ObjectID']),unicode(data['Result']))
+            dbus_async_cb(six.text_type(data['ObjectID']),six.text_type(data['Result']))
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
@@ -304,7 +307,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
     def DestroyObject(self,ObjectID,
                     dbus_async_cb,dbus_async_err_cb):
 
-        arguments = {'ObjectID':unicode(ObjectID)}
+        arguments = {'ObjectID':six.text_type(ObjectID)}
         r = self.callAction('DestroyObject',arguments)
         if r == '':
             return r
@@ -318,8 +321,8 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
     def UpdateObject(self,ObjectID,CurrentTagValue,NewTagValue,
                     dbus_async_cb,dbus_async_err_cb):
 
-        arguments = {'ObjectID':unicode(ObjectID),
-                     'CurrentTagValue':unicode(CurrentTagValue),
+        arguments = {'ObjectID':six.text_type(ObjectID),
+                     'CurrentTagValue':six.text_type(CurrentTagValue),
                      'NewTagValue':NewTagValue}
         r = self.callAction('UpdateObject',arguments)
         if r == '':
@@ -334,13 +337,13 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
     def MoveObject(self,ObjectID,NewParentID,
                     dbus_async_cb,dbus_async_err_cb):
 
-        arguments = {'ObjectID':unicode(ObjectID),
-                     'NewParentID':unicode(NewParentID)}
+        arguments = {'ObjectID':six.text_type(ObjectID),
+                     'NewParentID':six.text_type(NewParentID)}
         r = self.callAction('MoveObject',arguments)
         if r == '':
             return r
         def convert_reply(data):
-            dbus_async_cb(unicode(data['NewObjectID']))
+            dbus_async_cb(six.text_type(data['NewObjectID']))
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
@@ -349,13 +352,13 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
     def ImportResource(self,SourceURI,DestinationURI,
                     dbus_async_cb,dbus_async_err_cb):
 
-        arguments = {'SourceURI':unicode(SourceURI),
-                     'DestinationURI':unicode(DestinationURI)}
+        arguments = {'SourceURI':six.text_type(SourceURI),
+                     'DestinationURI':six.text_type(DestinationURI)}
         r = self.callAction('ImportResource',arguments)
         if r == '':
             return r
         def convert_reply(data):
-            dbus_async_cb(unicode(data['TransferID']))
+            dbus_async_cb(six.text_type(data['TransferID']))
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
@@ -364,13 +367,13 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
     def ExportResource(self,SourceURI,DestinationURI,
                     dbus_async_cb,dbus_async_err_cb):
 
-        arguments = {'SourceURI':unicode(SourceURI),
-                     'DestinationURI':unicode(DestinationURI)}
+        arguments = {'SourceURI':six.text_type(SourceURI),
+                     'DestinationURI':six.text_type(DestinationURI)}
         r = self.callAction('ExportResource',arguments)
         if r == '':
             return r
         def convert_reply(data):
-            dbus_async_cb(unicode(data['TransferID']))
+            dbus_async_cb(six.text_type(data['TransferID']))
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
@@ -379,7 +382,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
     def DeleteResource(self,ResourceURI,
                     dbus_async_cb,dbus_async_err_cb):
 
-        arguments = {'ResourceURI':unicode(ResourceURI)}
+        arguments = {'ResourceURI':six.text_type(ResourceURI)}
         r = self.callAction('DeleteResource',arguments)
         if r == '':
             return r
@@ -393,7 +396,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
     def StopTransferResource(self,TransferID,
                     dbus_async_cb,dbus_async_err_cb):
 
-        arguments = {'TransferID':unicode(TransferID)}
+        arguments = {'TransferID':six.text_type(TransferID)}
         r = self.callAction('StopTransferResource',arguments)
         if r == '':
             return r
@@ -407,12 +410,12 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
     def GetTransferProgress(self,TransferID,
                     dbus_async_cb,dbus_async_err_cb):
 
-        arguments = {'TransferID':unicode(TransferID)}
+        arguments = {'TransferID':six.text_type(TransferID)}
         r = self.callAction('GetTransferProgress',arguments)
         if r == '':
             return r
         def convert_reply(data):
-            dbus_async_cb(unicode(data['TransferStatus']),unicode(data['TransferLength']),unicode(data['TransferTotal']))
+            dbus_async_cb(six.text_type(data['TransferStatus']),six.text_type(data['TransferLength']),six.text_type(data['TransferTotal']))
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
@@ -421,13 +424,13 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
     def CreateReference(self,ContainerID,ObjectID,
                     dbus_async_cb,dbus_async_err_cb):
 
-        arguments = {'ContainerID':unicode(ContainerID),
-                     'ObjectID':unicode(ObjectID)}
+        arguments = {'ContainerID':six.text_type(ContainerID),
+                     'ObjectID':six.text_type(ObjectID)}
         r = self.callAction('CreateReference',arguments)
         if r == '':
             return r
         def convert_reply(data):
-            dbus_async_cb(unicode(data['NewID']))
+            dbus_async_cb(six.text_type(data['NewID']))
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
@@ -507,9 +510,9 @@ class DBusService(dbus.service.Object,log.Loggable):
         for func in dir(self):
             func = getattr(self,func)
             if callable(func) and hasattr(func, '_dbus_is_method'):
-                print func, func._dbus_interface, func._dbus_is_method
+                print(func, func._dbus_interface, func._dbus_is_method)
                 if hasattr(func, 'im_func'):
-                    print func.im_func
+                    print(func.__func__)
 
     def variable_changed(self,variable):
         #print self.service, "got signal for change of", variable
@@ -555,7 +558,7 @@ class DBusService(dbus.service.Object,log.Loggable):
                 kwargs = {}
                 try:
                     for k,v in arguments.items():
-                        kwargs[str(k)] = unicode(v)
+                        kwargs[str(k)] = six.text_type(v)
                 except:
                     pass
                 d = func(**kwargs)
@@ -568,7 +571,7 @@ class DBusService(dbus.service.Object,log.Loggable):
                          sender_keyword='sender',connection_keyword='connection')
     def call_action(self,name,arguments,dbus_async_cb,dbus_async_err_cb,sender=None,connection=None):
 
-        print "call_action called by ", sender, connection, self.type, self.tube
+        print("call_action called by ", sender, connection, self.type, self.tube)
         def reply(data,name,connection):
             if hasattr(connection,'_tube') == True:
                 if name  == 'Browse':
@@ -579,12 +582,12 @@ class DBusService(dbus.service.Object,log.Loggable):
                         for res in item.res:
                             remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
                             if remote_protocol == 'http-get' and remote_network == '*':
-                                quoted_url = 'mirabeau' + '/' + urllib.quote_plus(res.data)
-                                print "modifying", res.data
+                                quoted_url = 'mirabeau' + '/' + six.moves.urllib.parse.quote_plus(res.data)
+                                print("modifying", res.data)
                                 host_port = ':'.join((self.service.device.client.coherence.mirabeau._external_address,
                                                       str(self.service.device.client.coherence.mirabeau._external_port)))
-                                res.data = urlparse.urlunsplit(('http', host_port,quoted_url,"",""))
-                                print "--->", res.data
+                                res.data = six.moves.urllib.parse.urlunsplit(('http', host_port,quoted_url,"",""))
+                                print("--->", res.data)
                                 new_res.append(res)
                                 changed = True
                         item.res = new_res
@@ -600,7 +603,7 @@ class DBusService(dbus.service.Object,log.Loggable):
                 kwargs = {}
                 try:
                     for k,v in arguments.items():
-                        kwargs[str(k)] = unicode(v)
+                        kwargs[str(k)] = six.text_type(v)
                 except:
                     pass
                 d = action.call(**kwargs)
@@ -650,9 +653,9 @@ class DBusService(dbus.service.Object,log.Loggable):
                     if len(v) > 0:
                         lc[str(instance)] = v
                 if len(lc) > 0:
-                    data[unicode(n.name)] = lc
+                    data[six.text_type(n.name)] = lc
             else:
-                data[unicode(n.name)] = unicode(n.value)
+                data[six.text_type(n.name)] = six.text_type(n.value)
         return self.dbus_device.device.get_id(), self.type, dbus.Dictionary(data,signature='sv',variant_level=3)
 
 
@@ -717,7 +720,7 @@ class DBusDevice(dbus.service.Object,log.Loggable):
              'device_type': self.device.get_device_type(),
              'friendly_name': self.device.get_friendly_name(),
              'udn': self.device.get_id(),
-             'uri': list(urlparse.urlsplit(self.device.get_location())),
+             'uri': list(six.moves.urllib.parse.urlsplit(self.device.get_location())),
              'presentation_url': self.device.get_presentation_url(),
              'parent_udn': self.device.get_parent_id(),
              'services': services}
@@ -801,7 +804,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
     def shutdown(self):
         louie.disconnect(self._device_detected, 'Coherence.UPnP.Device.detection_completed', louie.Any)
         louie.disconnect(self._device_removed, 'Coherence.UPnP.Device.removed', louie.Any)
-        for device_id, device in self.devices.iteritems():
+        for device_id, device in six.iteritems(self.devices):
             device.shutdown()
         self.devices = {}
         self.remove_from_connection()
@@ -810,7 +813,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
     @dbus.service.method(BUS_NAME,in_signature='sv',out_signature='')
     def pin(self,key,value):
         self.pinboard[key] = value
-        print self.pinboard
+        print(self.pinboard)
 
     @dbus.service.method(BUS_NAME,in_signature='s',out_signature='v')
     def get_pin(self,key):
@@ -822,10 +825,10 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
 
     @dbus.service.method(BUS_NAME,in_signature='s',out_signature='s')
     def create_oob(self,file):
-        print 'create_oob'
+        print('create_oob')
         key = str(time.time())
         self.pinboard[key] = file
-        print self.pinboard
+        print(self.pinboard)
         return self.controlpoint.coherence.urlbase + 'oob?key=' + key
 
     def remove_client(self, usn, client):
@@ -876,7 +879,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         def done(generator):
             dbus_async_cb(dbus.Array(infos, signature='v', variant_level=2))
 
-        devices = self.devices.copy().values()
+        devices = list(self.devices.copy().values())
         dfr = task.coiterate(iterate_devices(devices))
         dfr.addCallbacks(done, lambda failure: dbus_async_err_cb(failure.value))
 
@@ -889,7 +892,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
     @dbus.service.method(BUS_NAME,in_signature='sa{ss}',out_signature='s')
     def add_plugin(self,backend,arguments):
         kwargs = {}
-        for k,v in arguments.iteritems():
+        for k,v in six.iteritems(arguments):
             kwargs[str(k)] = str(v)
         p = self.controlpoint.coherence.add_plugin(backend,**kwargs)
         return str(p.uuid)
@@ -909,8 +912,8 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         if function == None:
             return ""
         kwargs = {}
-        for k,v in arguments.iteritems():
-            kwargs[str(k)] = unicode(v)
+        for k,v in six.iteritems(arguments):
+            kwargs[str(k)] = six.text_type(v)
         function(**kwargs)
         return uuid
 
@@ -923,7 +926,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
             client = device.get_client()
             new_arguments = {}
             for k,v in arguments.items():
-                new_arguments[str(k)] = unicode(v)
+                new_arguments[str(k)] = six.text_type(v)
 
             def reply(data):
                 dbus_async_cb(dbus.Dictionary(data,signature='sv',variant_level=4))
@@ -952,7 +955,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         def reply(data):
             dbus_async_cb(200)
 
-        d = self.controlpoint.put_resource(str(destination_uri),unicode(filepath))
+        d = self.controlpoint.put_resource(str(destination_uri),six.text_type(filepath))
         d.addCallback(reply)
         d.addErrback(dbus_async_err_cb)
 
@@ -1047,7 +1050,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
                  signature='v', variant_level=2)
 
     def _get_devices_of_type(self, typ):
-        return [ device.get_info() for device in self.devices.itervalues()
+        return [ device.get_info() for device in six.itervalues(self.devices)
                 if device.get_friendly_device_type() == typ ]
 
     @dbus.service.method(DLNA_BUS_NAME + '.DMC', in_signature='',

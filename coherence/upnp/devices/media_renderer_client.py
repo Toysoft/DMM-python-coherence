@@ -3,6 +3,7 @@
 
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 from coherence.upnp.services.clients.connection_manager_client import ConnectionManagerClient
 from coherence.upnp.services.clients.rendering_control_client import RenderingControlClient
 from coherence.upnp.services.clients.av_transport_client import AVTransportClient

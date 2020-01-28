@@ -11,6 +11,7 @@ Another simple rss based Media Server, this time for TED.com content
 
 # I can reuse stuff. cool. But that also means we might want to refactor it into
 # a base class to reuse
+from __future__ import absolute_import
 from coherence.backends.lolcats_storage import LolcatsStore
 from coherence.backends.appletrailers_storage import Container
 

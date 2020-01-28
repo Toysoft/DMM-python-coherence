@@ -5,6 +5,7 @@
 
 # Copyright 2008, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 from twisted.internet import task
 from twisted.internet import reactor
 from twisted.web import resource, static
@@ -64,14 +65,14 @@ class DimmableLight(log.Loggable,BasicDeviceMixin):
         try:
             self.switch_power_server = SwitchPowerServer(self)
             self._services.append(self.switch_power_server)
-        except LookupError,msg:
+        except LookupError as msg:
             self.warning( 'SwitchPowerServer', msg)
             raise LookupError(msg)
 
         try:
             self.dimming_server = DimmingServer(self)
             self._services.append(self.dimming_server)
-        except LookupError,msg:
+        except LookupError as msg:
             self.warning( 'SwitchPowerServer', msg)
             raise LookupError(msg)
 
@@ -104,7 +105,7 @@ class DimmableLight(log.Loggable,BasicDeviceMixin):
         self.web_resource.putChild('Dimming', self.dimming_server)
 
         for icon in self.icons:
-            if icon.has_key('url'):
+            if 'url' in icon:
                 if icon['url'].startswith('file://'):
                     self.web_resource.putChild(os.path.basename(icon['url']),
                                                static.File(icon['url'][7:]))

@@ -4,8 +4,10 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006,2007,2008,2009 Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 import time
-from urlparse import urlsplit
+from six.moves.urllib.parse import urlsplit
+import six
 
 from twisted.internet import reactor, defer
 from twisted.web import resource, server
@@ -50,7 +52,7 @@ class EventServer(resource.Resource, log.Loggable):
         else:
             self.debug("data:", data)
             headers = request.getAllHeaders()
-            sid = headers['sid']
+            sid = headers[six.binary_type('sid', encoding="utf-8")]
             try:
                 tree = utils.parse_xml(data).getroot()
             except (SyntaxError,AttributeError):
@@ -121,17 +123,17 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
             try:
                 #print self.subscribers
                 #print headers['sid']
-                if self.subscribers.has_key(headers['sid']):
+                if headers['sid'] in self.subscribers:
                     s = self.subscribers[headers['sid']]
                     s['timeout'] = timeout
                     s['created'] = time.time()
-                elif not headers.has_key('callback'):
+                elif 'callback' not in headers:
                     request.setResponseCode(404)
                     request.setHeader('SERVER', SERVER_ID)
                     request.setHeader('CONTENT-LENGTH', str(0))
                     return ""
             except:
-                if not headers.has_key('callback'):
+                if 'callback' not in headers:
                     request.setResponseCode(404)
                     request.setHeader('SERVER', SERVER_ID)
                     request.setHeader('CONTENT-LENGTH', str(0))
@@ -314,7 +316,7 @@ def subscribe(service, action='subscribe'):
         request.append( "Content-Length: 0")
         request.append( "")
         request.append( "")
-        request = '\r\n'.join(request)
+        request = six.ensure_binary('\r\n'.join(request))
         log.debug(log_category, "event.subscribe.send_request %r %r", request, p)
         try:
             p.transport.writeSomeData(request)
@@ -418,7 +420,7 @@ def send_notification(s, xml):
                     '',
                     xml]
 
-        request = '\r\n'.join(request)
+        request = six.ensure_binary('\r\n'.join(request))
         log.info(log_category, "send_notification.send_request to %r %r",
                  s['sid'], s['callback'])
         log.debug(log_category, "request: %r", request)

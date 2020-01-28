@@ -9,7 +9,8 @@
 #
 # TODO: add comments
 
-import urllib
+from __future__ import absolute_import
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 
 from coherence.upnp.core import DIDLLite
 from coherence.backend import BackendStore, BackendItem, Container, \
@@ -218,7 +219,7 @@ class YamjStore(AbstractBackendStore):
             counter = 1
         else:
             counter = abs(offset / self.nbMoviesPerFile) + 1
-        fileUrl = "%s/%s_%d.xml" % (self.jukebox_url, urllib.quote(root_name), counter)
+        fileUrl = "%s/%s_%d.xml" % (self.jukebox_url, six.moves.urllib.parse.quote(root_name), counter)
 
         def fail_readPage(f):
             self.warning("failure reading yamj index (%s): %r" % (fileUrl,f.getErrorMessage()))

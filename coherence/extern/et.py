@@ -7,32 +7,13 @@
 #
 # a little helper to get the proper ElementTree package
 
+from __future__ import absolute_import
+from __future__ import print_function
 import re
-import exceptions
+import six
 
-try:
-    import cElementTree as ET
-    import elementtree
-    #print "ElementTree: using cElementTree as ET"
-except ImportError:
-    try:
-        from elementtree import ElementTree as ET
-        import elementtree
-        #print "ElementTree: using elementtree.ElementTree as ET"
-    except ImportError:
-        """ this seems to be necessary with the python2.5 on the Maemo platform """
-        try:
-            from xml.etree import cElementTree as ET
-            from xml import etree as elementtree
-            #print "ElementTree: using xml.etree.cElementTree as ET"
-        except ImportError:
-            try:
-                from xml.etree import ElementTree as ET
-                from xml import etree as elementtree
-                #print "ElementTree: using xml.etree.ElementTree as ET"
-            except ImportError:
-                #print "ElementTree: no ElementTree module found, critical error"
-                raise ImportError("ElementTree: no ElementTree module found, critical error")
+from xml.etree import ElementTree as ET
+from xml import etree as elementtree
 
 utf8_escape = re.compile(eval(r'u"[&<>\"]+"'))
 escape = re.compile(eval(r'u"[&<>\"\u0080-\uffff]+"'))
@@ -63,12 +44,12 @@ def new_encode_entity(text, pattern=utf8_escape):
             if t is None:
                 t = "&#%d;" % ord(char)
             append(t)
-        if type(text) == unicode:
+        if type(text) == six.text_type:
             return ''.join(out)
         else:
             return u''.encode('utf-8').join(out)
     try:
-        if type(text) == unicode:
+        if type(text) == six.text_type:
             return elementtree.ElementTree._encode(escape.sub(escape_entities, text), 'ascii')
         else:
             return elementtree.ElementTree._encode(utf8_escape.sub(escape_entities, text.decode('utf-8')), 'utf-8')
@@ -93,7 +74,7 @@ if not hasattr(ET, 'XMLParser'):
 def namespace_map_update(namespaces):
     elementtree.ElementTree._namespace_map.update(namespaces)
 
-class ElementInterface(elementtree.ElementTree._ElementInterface):
+class ElementInterface(elementtree.ElementTree.Element):
     """ helper class """
 
 def indent(elem, level=0):
@@ -115,28 +96,21 @@ def indent(elem, level=0):
             elem.tail = i
 
 def parse_xml(data, encoding="utf-8",dump_invalid_data=False):
-    try:
-        p = ET.XMLParser(encoding=encoding)
-    except exceptions.TypeError:
-        p = ET.XMLParser()
+    p = ET.XMLParser()
 
     # my version of twisted.web returns page_infos as a dictionary in
     # the second item of the data list
     if isinstance(data, (list, tuple)):
-        data, _ = data
-
-    try:
-        data = data.encode(encoding)
-    except UnicodeDecodeError:
-        pass
+        data = data[0]
+    data = six.ensure_str(data)
 
     # Guess from who we're getting this?
     data = data.replace('\x00','')
     try:
         p.feed(data)
-    except Exception, error:
+    except Exception as error:
         if dump_invalid_data:
-            print error, repr(data)
+            print(error, repr(data))
         p.close()
         raise
     else:

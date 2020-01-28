@@ -32,6 +32,8 @@ Wow. You are still reading. You must be really interessted. Then let's go.
 # The entry point for each kind of Backend is a 'BackendStore'. The BackendStore
 # is the instance that does everything Usually. In this Example it can be
 # understood as the 'Server', the object retrieving and serving the data.
+from __future__ import absolute_import
+from __future__ import print_function
 from coherence.backend import BackendStore
 
 # The data itself is stored in BackendItems. They are also the first things we
@@ -58,6 +60,7 @@ from twisted.internet import reactor
 
 # And to parse the RSS-Data (which is XML), we use the coherence helper
 from coherence.extern.et import parse_xml
+import six
 
 
 ########## The models
@@ -218,9 +221,9 @@ class LolcatsStore(BackendStore):
         dfr.addCallback(self.queue_update)
 
     def get_by_id(self, id):
-        print "asked for", id, type(id)
+        print("asked for", id, type(id))
         # what ever we are asked for, we want to return the container only
-        if isinstance(id, basestring):
+        if isinstance(id, six.string_types):
             id = id.split('@',1)
             id = id[0]
         if int(id) == self.ROOT_ID:
@@ -337,5 +340,5 @@ class LolcatsStore(BackendStore):
 
     def queue_update(self, error_or_failure):
         # We use the reactor to queue another updating of our data
-        print error_or_failure
+        print(error_or_failure)
         reactor.callLater(self.refresh, self.update_loop)

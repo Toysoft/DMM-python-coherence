@@ -12,6 +12,8 @@
     and feeding the output into a http response
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import pygst
 pygst.require('0.10')
 import gst
@@ -19,7 +21,7 @@ import gobject
 gobject.threads_init()
 
 import os.path
-import urllib
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 
 from twisted.web import resource, server
 from twisted.internet import protocol
@@ -197,7 +199,7 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
             # check caps for streamheader buffer
             caps = buffer.get_caps()
             s = caps[0]
-            if s.has_key("streamheader"):
+            if "streamheader" in s:
                 self.streamheader = s["streamheader"]
                 self.debug("setting streamheader")
                 for r in self.requests:
@@ -214,7 +216,7 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
             # check caps for streamheader buffers
             caps = buffer.get_caps()
             s = caps[0]
-            if s.has_key("streamheader"):
+            if "streamheader" in s:
                 self.streamheader = s["streamheader"]
                 self.debug("setting streamheader")
                 for r in self.requests:
@@ -274,7 +276,7 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
 
     def on_message(self, bus, message):
         t = message.type
-        print "on_message", t
+        print("on_message", t)
         if t == gst.MESSAGE_ERROR:
             #err, debug = message.parse_error()
             #print "Error: %s" % err, debug
@@ -296,7 +298,7 @@ class BaseTranscoder(resource.Resource, log.Loggable):
     def __init__(self, uri, destination=None):
         self.info('uri %s %r' % (uri, type(uri)))
         if uri[:7] not in ['file://', 'http://']:
-            uri = 'file://' + urllib.quote(uri)   #FIXME
+            uri = 'file://' + six.moves.urllib.parse.quote(uri)   #FIXME
         self.uri = uri
         self.destination = destination
         resource.Resource.__init__(self)
@@ -336,7 +338,7 @@ class BaseTranscoder(resource.Resource, log.Loggable):
 
     def on_message(self, bus, message):
         t = message.type
-        print "on_message", t
+        print("on_message", t)
         if t == gst.MESSAGE_ERROR:
             #err, debug = message.parse_error()
             #print "Error: %s" % err, debug
@@ -530,7 +532,7 @@ class ExternalProcessProtocol(protocol.ProcessProtocol):
         self.caller = caller
 
     def connectionMade(self):
-        print "pp connection made"
+        print("pp connection made")
 
     def outReceived(self, data):
         #print "outReceived with %d bytes!" % len(data)
@@ -538,7 +540,7 @@ class ExternalProcessProtocol(protocol.ProcessProtocol):
 
     def errReceived(self, data):
         #print "errReceived! with %d bytes!" % len(data)
-        print "pp (err):", data.strip()
+        print("pp (err):", data.strip())
 
     def inConnectionLost(self):
         #print "inConnectionLost! stdin is closed! (we probably did it)"
@@ -553,8 +555,8 @@ class ExternalProcessProtocol(protocol.ProcessProtocol):
         pass
 
     def processEnded(self, status_object):
-        print "processEnded, status %d" % status_object.value.exitCode
-        print "processEnded quitting"
+        print("processEnded, status %d" % status_object.value.exitCode)
+        print("processEnded quitting")
         self.caller.ended = True
         self.caller.write_data('')
 
@@ -579,7 +581,7 @@ class ExternalProcessProducer(object):
             # .resumeProducing again, so be prepared for a re-entrant call
             self.request.write(data)
         if self.request and self.ended:
-            print "closing"
+            print("closing")
             self.request.unregisterProducer()
             self.request.finish()
             self.request = None
@@ -600,7 +602,7 @@ class ExternalProcessProducer(object):
         pass
 
     def stopProducing(self):
-        print "stopProducing", self.request
+        print("stopProducing", self.request)
         self.request.unregisterProducer()
         self.process.loseConnection()
         self.request.finish()
@@ -618,7 +620,7 @@ class ExternalProcessPipeline(resource.Resource, log.Loggable):
         return self
 
     def render(self, request):
-        print "ExternalProcessPipeline render"
+        print("ExternalProcessPipeline render")
         try:
             if self.contentType:
                 request.setHeader('Content-Type', self.contentType)

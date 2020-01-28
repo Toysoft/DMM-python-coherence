@@ -7,7 +7,9 @@
 
 """
 
-import urllib, urlparse
+from __future__ import absolute_import
+from __future__ import print_function
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error, six.moves.urllib.parse
 
 import dbus
 
@@ -29,6 +31,7 @@ from coherence.upnp.core import DIDLLite
 from coherence.upnp.core.utils import ReverseProxyUriResource
 
 from coherence import log
+import six
 
 class MirabeauProxy(resource.Resource, log.Loggable):
     logCategory = 'mirabeau'
@@ -40,7 +43,7 @@ class MirabeauProxy(resource.Resource, log.Loggable):
 
     def getChildWithDefault(self, path, request):
         self.info('MiraBeau getChildWithDefault %s, %s, %s %s' % (request.method, path, request.uri, request.client))
-        uri = urllib.unquote_plus(path)
+        uri = six.moves.urllib.parse.unquote_plus(path)
         self.info('MiraBeau  uri %r' % uri)
         return ReverseProxyUriResource(uri)
 
@@ -88,10 +91,10 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
                     for res in item.res:
                         remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
                         if remote_protocol == 'http-get' and remote_network == '*':
-                            quoted_url = urllib.quote_plus(res.data)
-                            print "modifying", res.data
-                            res.data = urlparse.urlunsplit(('http', self.service.device.external_address,'mirabeau',quoted_url,""))
-                            print "--->", res.data
+                            quoted_url = six.moves.urllib.parse.quote_plus(res.data)
+                            print("modifying", res.data)
+                            res.data = six.moves.urllib.parse.urlunsplit(('http', self.service.device.external_address,'mirabeau',quoted_url,""))
+                            print("--->", res.data)
                             new_res.append(res)
                             changed = True
                     item.res = new_res
@@ -124,7 +127,7 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
         del kwargs['soap_methodName']
 
         in_arguments = action.get_in_arguments()
-        for arg_name, arg in kwargs.iteritems():
+        for arg_name, arg in six.iteritems(kwargs):
             if arg_name.find('X_') == 0:
                 continue
             l = [ a for a in in_arguments if arg_name == a.get_name()]

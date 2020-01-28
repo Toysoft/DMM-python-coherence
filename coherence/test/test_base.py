@@ -9,6 +9,7 @@
 Test cases for the L{Coherence base class}
 """
 
+from __future__ import absolute_import
 import time
 
 from twisted.trial import unittest

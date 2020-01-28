@@ -4,6 +4,7 @@
 # Copyright 2009, Jean-Michel Sizun
 # Copyright 2009 Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 import os.path
 
 from twisted.internet import reactor, threads
@@ -241,7 +242,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                 bufferFile.encoding = None
                 try:
                     return bufferFile.render(request)
-                except Exception,error:
+                except Exception as error:
                     self.info(error)
 
         if request.method != 'HEAD':

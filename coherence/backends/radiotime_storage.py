@@ -7,6 +7,8 @@
 # Copyright 2007, Frank Scholz <coherence@beebits.net>
 # Copyright 2009-2010, Jean-Michel Sizun <jmDOTsizunATfreeDOTfr>
 
+from __future__ import absolute_import
+from __future__ import print_function
 from twisted.internet import defer,reactor
 from twisted.python.failure import Failure
 from twisted.web import server
@@ -19,7 +21,7 @@ from coherence.upnp.core.DIDLLite import classChooser, Resource, DIDLElement
 from coherence import log
 from coherence.backend import BackendItem, BackendStore, Container, LazyContainer, AbstractBackendStore
 #from coherence.backends.iradio_storage import PlaylistStreamProxy
-from urlparse import urlsplit
+from six.moves.urllib.parse import urlsplit
 from coherence.extern.et import parse_xml
 
 OPML_BROWSE_URL = 'http://opml.radiotime.com/Browse.ashx'
@@ -175,7 +177,7 @@ class RadiotimeStore(AbstractBackendStore):
         def got_xml_error(error):
             self.warning("Data received from Radiotime service is invalid: %s" % url)
             #self.debug("%r", error.getTraceback())
-            print error.getTraceback()
+            print(error.getTraceback())
             parent.childrenRetrievingNeeded = True # we retry
             return Failure("Unable to retrieve items for url %s" % url)
             

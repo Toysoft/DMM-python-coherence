@@ -4,6 +4,8 @@
 # Copyright 2007, Frank Scholz <coherence@beebits.net>
 # Copyright 2008, Jean-Michel Sizun <jm.sizun@free.fr>
 
+from __future__ import absolute_import
+from __future__ import print_function
 from twisted.internet import defer
 
 from coherence.upnp.core import utils
@@ -14,9 +16,10 @@ from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDL
 from coherence.backend import BackendStore
 from coherence.backend import BackendItem
 
-from urlparse import urlsplit
+from six.moves.urllib.parse import urlsplit
 
 from coherence.extern.galleryremote import Gallery
+import six
 
 
 class ProxyGallery2Image(ReverseProxyUriResource):
@@ -205,7 +208,7 @@ class Gallery2Store(BackendStore):
         return self.__class__.__name__ 
 
     def append( self, obj, parent):
-        if isinstance(obj, basestring):
+        if isinstance(obj, six.string_types):
             mimetype = 'directory'
         else:
             mimetype = obj['mimetype']
@@ -238,7 +241,7 @@ class Gallery2Store(BackendStore):
         return len(self.store)
 
     def get_by_id(self,id):
-        if isinstance(id, basestring):
+        if isinstance(id, six.string_types):
             id = id.split('@',1)
             id = id[0]
         try:
@@ -348,7 +351,7 @@ def main():
     f = Gallery2Store(None)
 
     def got_upnp_result(result):
-        print "upnp", result
+        print("upnp", result)
 
     f.upnp_init()
 

@@ -4,9 +4,11 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
+from __future__ import print_function
 from os.path import abspath
-import urlparse
-from urlparse import urlsplit
+import six.moves.urllib.parse
+from six.moves.urllib.parse import urlsplit
 
 from coherence.extern.et import parse_xml as et_parse_xml
 
@@ -20,12 +22,14 @@ from twisted.internet import reactor,protocol,defer,abstract
 from twisted.python import failure
 
 from twisted.python.util import InsensitiveDict
+import six
+from six.moves import map
 
 
 try:
     from twisted.protocols._c_urlarg import unquote
 except ImportError:
-    from urllib import unquote
+    from six.moves.urllib.parse import unquote
 
 try:
     import netifaces
@@ -35,7 +39,7 @@ except ImportError:
 
 
 def means_true(value):
-    if isinstance(value,basestring):
+    if isinstance(value,six.string_types):
         value = value.lower()
     return value in [True,1,'1','true','yes','ok']
 
@@ -58,15 +62,16 @@ def parse_xml(data, encoding="utf-8"):
 def parse_http_response(data):
 
     """ don't try to get the body, there are reponses without """
+    data = six.ensure_str(data)
     header = data.split('\r\n\r\n')[0]
 
     lines = header.split('\r\n')
     cmd = lines[0].split(' ')
-    lines = map(lambda x: x.replace(': ', ':', 1), lines[1:])
-    lines = filter(lambda x: len(x) > 0, lines)
+    lines = [x.replace(': ', ':', 1) for x in lines[1:]]
+    lines = [x for x in lines if len(x) > 0]
 
     headers = [x.split(':', 1) for x in lines]
-    headers = dict(map(lambda x: (x[0].lower(), x[1]), headers))
+    headers = dict([(x[0].lower(), x[1]) for x in headers])
 
     return cmd, headers
 
@@ -98,7 +103,7 @@ def get_ip_address(ifname):
             # we now have a list of address dictionaries, there may be multiple addresses bound
             return ifaceadr[0]['addr']
     import sys
-    if sys.platform in ('win32','sunos5'):
+    if sys.platform in ('win32', 'sunos5'):
         return '127.0.0.1'
 
     from os import uname
@@ -107,21 +112,22 @@ def get_ip_address(ifname):
     import struct
 
     system_type = uname()[0]
-
-    if system_type == "Linux":
+    if system_type == 'Linux':
         SIOCGIFADDR = 0x8915
     else:
         SIOCGIFADDR = 0xc0206921
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        return socket.inet_ntoa(fcntl.ioctl(
+        ip = socket.inet_ntoa(fcntl.ioctl(
             s.fileno(),
             SIOCGIFADDR,
-            struct.pack('256s', ifname[:15])
+            struct.pack(b'256s', ifname[:15].encode('ascii'))
         )[20:24])
-    except:
-        return '127.0.0.1'
+    except Exception:
+        ip = '127.0.0.1'
+    # print(f'ip is: {ip}')
+    return ip
 
 
 def get_host_address():
@@ -149,7 +155,7 @@ def get_host_address():
                         if l[1] == '00000000': #default route...
                             route.close()
                             return get_ip_address(l[0])
-        except IOError, msg:
+        except IOError as msg:
             """ fallback to parsing the output of netstat """
             from twisted.internet import utils
 
@@ -175,7 +181,7 @@ def get_host_address():
             d.addCallback(result)
             d.addErrback(fail)
             return d
-        except Exception, msg:
+        except Exception as msg:
             import traceback
             traceback.print_exc()
 
@@ -184,15 +190,12 @@ def get_host_address():
 
 def de_chunk_payload(response):
 
-    try:
-        import cStringIO as StringIO
-    except ImportError:
-        import StringIO
+    from io import StringIO
     """ This method takes a chunked HTTP data object and unchunks it."""
-    newresponse = StringIO.StringIO()
+    newresponse = StringIO()
     # chunked encoding consists of a bunch of lines with
     # a length in hex followed by a data chunk and a CRLF pair.
-    response = StringIO.StringIO(response)
+    response = StringIO(response)
 
     def read_chunk_length():
         line = response.readline()
@@ -217,12 +220,13 @@ class Request(server.Request):
         # get site from channel
         self.site = self.channel.site
         # set various default headers
-        self.setHeader('server', SERVER_ID)
-        self.setHeader('date', http.datetimeToString())
-        self.setHeader('content-type', "text/html")
+        self.setHeader(six.ensure_binary('server'), six.ensure_binary(SERVER_ID))
+        self.setHeader(six.ensure_binary('date'), six.ensure_binary(http.datetimeToString()))
+        self.setHeader(six.ensure_binary('content-type'), six.ensure_binary("text/html"))
 
         # Resource Identification
-        url = self.path
+        url = six.ensure_str(self.path)
+
         #remove trailing "/", if ever
         url = url.rstrip('/')
         scheme, netloc, path, query, fragment = urlsplit(url)
@@ -230,18 +234,16 @@ class Request(server.Request):
         if path == "":
             self.postpath = []
         else:
-            self.postpath = map(unquote, path[1:].split('/'))
+            postpath = list(map(unquote, path[1:].split('/')))
+            self.postpath = list(six.ensure_binary(i) for i in postpath)
 
         try:
             def deferred_rendering(r):
                 self.render(r)
 
-            try:
-                resrc = self.site.getResourceFor(self)
-            except:
-                resrc = None
+            resrc = self.site.getResourceFor(self)
             if resrc is None:
-                self.setResponseCode(http.NOT_FOUND, "Error: No resource for path %s" % path)
+                self.setResponseCode(http.NOT_FOUND, six.ensure_binary("Error: No resource for path %s" % path))
                 self.finish()
             elif isinstance(resrc, defer.Deferred):
                 resrc.addCallback(deferred_rendering)
@@ -261,96 +263,35 @@ class Site(server.Site):
         pass
         #http._logDateTimeStart()
 
-
-class ProxyClient(http.HTTPClient):
-    """Used by ProxyClientFactory to implement a simple web proxy."""
+class ProxyClient(proxy.ProxyClient):
 
     def __init__(self, command, rest, version, headers, data, father):
-        self.father = father
-        self.command = command
-        self.rest = rest
-        if headers.has_key("proxy-connection"):
-            del headers["proxy-connection"]
-        #headers["connection"] = "close"
-        self.headers = headers
-        #print "command", command
-        #print "rest", rest
-        #print "headers", headers
-        self.data = data
+        # headers['connection'] = 'close'
         self.send_data = 0
-
-    def connectionMade(self):
-        self.sendCommand(self.command, self.rest)
-        for header, value in self.headers.items():
-            self.sendHeader(header, value)
-        self.endHeaders()
-        self.transport.write(self.data)
+        proxy.ProxyClient.__init__(self, command, rest, version,
+                                   headers, data, father)
 
     def handleStatus(self, version, code, message):
         if message:
             # Add a whitespace to message, this allows empty messages
             # transparently
-            message = " %s" % (message,)
-
+            message = f' {message}'
         if version == 'ICY':
             version = 'HTTP/1.1'
-        #print "ProxyClient handleStatus", version, code, message
-        self.father.transport.write("%s %s %s\r\n" % (version, code, message))
+        proxy.ProxyClient.handleStatus(self, version, code, message)
 
     def handleHeader(self, key, value):
-        #print "ProxyClient handleHeader", key, value
         if not key.startswith('icy-'):
-            #print "ProxyClient handleHeader", key, value
-            self.father.transport.write("%s: %s\r\n" % (key, value))
-
-    def handleEndHeaders(self):
-        #self.father.transport.write("%s: %s\r\n" % ( 'Keep-Alive', ''))
-        #self.father.transport.write("%s: %s\r\n" % ( 'Accept-Ranges', 'bytes'))
-        #self.father.transport.write("%s: %s\r\n" % ( 'Content-Length', '2000000'))
-        #self.father.transport.write("%s: %s\r\n" % ( 'Date', 'Mon, 26 Nov 2007 11:04:12 GMT'))
-        #self.father.transport.write("%s: %s\r\n" % ( 'Last-Modified', 'Sun, 25 Nov 2007 23:19:51 GMT'))
-        ##self.father.transport.write("%s: %s\r\n" % ( 'Server', 'Apache/2.0.52 (Red Hat)'))
-        self.father.transport.write("\r\n")
+            proxy.ProxyClient.handleHeader(self, key, value)
 
     def handleResponsePart(self, buffer):
-        #print "ProxyClient handleResponsePart", len(buffer), self.father.chunked
         self.send_data += len(buffer)
-        self.father.write(buffer)
+        proxy.ProxyClient.handleResponsePart(self, buffer)
 
-    def handleResponseEnd(self):
-        #print "handleResponseEnd", self.send_data
-        self.transport.loseConnection()
-        self.father.channel.transport.loseConnection()
-
-
-class ProxyClientFactory(protocol.ClientFactory):
-    """
-    Used by ProxyRequest to implement a simple web proxy.
-    """
-
-    protocol = proxy.ProxyClient
-
-
-    def __init__(self, command, rest, version, headers, data, father):
-        self.father = father
-        self.command = command
-        self.rest = rest
-        self.headers = headers
-        self.data = data
-        self.version = version
-
-
-    def buildProtocol(self, addr):
-        return self.protocol(self.command, self.rest, self.version,
-                             self.headers, self.data, self.father)
-
-
-    def clientConnectionFailed(self, connector, reason):
-        self.father.transport.write("HTTP/1.0 501 Gateway error\r\n")
-        self.father.transport.write("Content-Type: text/html\r\n")
-        self.father.transport.write("\r\n")
-        self.father.transport.write('''<H1>Could not connect</H1>''')
-        self.father.transport.loseConnection()
+class ProxyClientFactory(proxy.ProxyClientFactory):
+    # :fixme: Why here proxy.ProxyClient is used instad of our own
+    # ProxyClent? Is out ProxyClient used at all?
+    protocol = ProxyClient
 
 
 class ReverseProxyResource(proxy.ReverseProxyResource):
@@ -406,7 +347,7 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
         else:
             request.responseHeaders['host'] = "%s:%d" % (self.host, self.port)
         request.content.seek(0, 0)
-        qs = urlparse.urlparse(request.uri)[4]
+        qs = six.moves.urllib.parse.urlparse(request.uri)[4]
         if qs == '':
             qs = self.qs
         if qs:
@@ -463,20 +404,22 @@ class myHTTPPageGetter(client.HTTPPageGetter):
     followRedirect = True
 
     def connectionMade(self):
-        method = getattr(self, 'method', 'GET')
+        method = six.ensure_binary(getattr(self, 'method', 'GET'))
         #print "myHTTPPageGetter", method, self.factory.path
         self.sendCommand(method, self.factory.path)
-        self.sendHeader('Host', self.factory.headers.get("host", self.factory.host))
-        self.sendHeader('User-Agent', self.factory.agent)
+        self.sendHeader(six.ensure_binary('Host'), six.ensure_binary(self.factory.headers.get("host", self.factory.host)))
+        self.sendHeader(six.ensure_binary('User-Agent'), six.ensure_binary(self.factory.agent))
         if self.factory.cookies:
             l=[]
             for cookie, cookval in self.factory.cookies.items():
                 l.append('%s=%s' % (cookie, cookval))
-            self.sendHeader('Cookie', '; '.join(l))
+            self.sendHeader(six.ensure_binary('Cookie'), six.ensure_binary('; '.join(l)))
         data = getattr(self.factory, 'postdata', None)
         if data is not None:
-            self.sendHeader("Content-Length", str(len(data)))
+            self.sendHeader(six.ensure_binary("Content-Length"), six.ensure_binary(len(data)))
         for (key, value) in self.factory.headers.items():
+            key = six.ensure_binary(key)
+            value = six.ensure_binary(value)
             if key.lower() != "content-length":
                 # we calculated it on our own
                 self.sendHeader(key, value)
@@ -498,7 +441,7 @@ class myHTTPPageGetter(client.HTTPPageGetter):
             self.factory.noPage(failure.Failure(
                 client.PartialDownloadError(self.status, self.message, response)))
         else:
-            if(self.headers.has_key('transfer-encoding') and
+            if('transfer-encoding' in self.headers and
                self.headers['transfer-encoding'][0].lower() == 'chunked'):
                 self.factory.page(de_chunk_payload(response))
             else:
@@ -553,7 +496,7 @@ def getPage(url, contextFactory=None, *args, **kwargs):
     """
     kwargs['agent'] = "Coherence PageGetter"
     return client._makeGetterFactory(
-        url,
+        six.ensure_binary(url),
         HeaderAwareHTTPClientFactory,
         contextFactory=contextFactory,
         *args, **kwargs).deferred
@@ -566,6 +509,7 @@ def downloadPage(url, file, contextFactory=None, *args, **kwargs):
 
     See HTTPDownloader to see what extra args can be passed.
     """
+    url = six.ensure_binary(url)
     scheme, host, port, path = client._parse(url)
     factory = HeaderAwareHTTPDownloader(url, file, *args, **kwargs)
     factory.noisy = False
@@ -602,7 +546,7 @@ class BufferFile(static.File):
 
         # FIXME detect when request is REALLY finished
         if request is None or request.finished :
-            print "No request to render!"
+            print("No request to render!")
             return ''
 
         """You know what you doing."""
@@ -638,7 +582,7 @@ class BufferFile(static.File):
 
         try:
             f = self.openForReading()
-        except IOError, e:
+        except IOError as e:
             import errno
             if e[0] == errno.EACCES:
                 return error.ForbiddenResource().render(request)
@@ -663,8 +607,8 @@ class BufferFile(static.File):
                 # Are we requesting something beyond the current size of the file?
                 if (start >= self.getFileSize()):
                     # Retry later!
-                    print bytesrange
-                    print "Requesting data beyond current scope -> postpone rendering!"
+                    print(bytesrange)
+                    print("Requesting data beyond current scope -> postpone rendering!")
                     self.upnp_retry = reactor.callLater(1.0, self.render, request)
                     return server.NOT_DONE_YET
 

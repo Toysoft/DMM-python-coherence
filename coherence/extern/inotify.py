@@ -12,8 +12,11 @@
 #    -> reverted, as it might still be needed somewhere (fs)
 #  * Used fdesc.readFromFD to read during doRead
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import struct
+import six
 
 try:
     import ctypes
@@ -28,21 +31,21 @@ from twisted.python.filepath import FilePath
 
 # from /usr/src/linux/include/linux/inotify.h
 
-IN_ACCESS =         0x00000001L     # File was accessed
-IN_MODIFY =         0x00000002L     # File was modified
-IN_ATTRIB =         0x00000004L     # Metadata changed
-IN_CLOSE_WRITE =    0x00000008L     # Writtable file was closed
-IN_CLOSE_NOWRITE =  0x00000010L     # Unwrittable file closed
-IN_OPEN =           0x00000020L     # File was opened
-IN_MOVED_FROM =     0x00000040L     # File was moved from X
-IN_MOVED_TO =       0x00000080L     # File was moved to Y
-IN_CREATE =         0x00000100L     # Subfile was created
-IN_DELETE =         0x00000200L     # Subfile was delete
-IN_DELETE_SELF =    0x00000400L     # Self was deleted
-IN_MOVE_SELF =      0x00000800L     # Self was moved
-IN_UNMOUNT =        0x00002000L     # Backing fs was unmounted
-IN_Q_OVERFLOW =     0x00004000L     # Event queued overflowed
-IN_IGNORED =        0x00008000L     # File was ignored
+IN_ACCESS =         0x00000001     # File was accessed
+IN_MODIFY =         0x00000002     # File was modified
+IN_ATTRIB =         0x00000004     # Metadata changed
+IN_CLOSE_WRITE =    0x00000008     # Writtable file was closed
+IN_CLOSE_NOWRITE =  0x00000010     # Unwrittable file closed
+IN_OPEN =           0x00000020     # File was opened
+IN_MOVED_FROM =     0x00000040     # File was moved from X
+IN_MOVED_TO =       0x00000080     # File was moved to Y
+IN_CREATE =         0x00000100     # Subfile was created
+IN_DELETE =         0x00000200     # Subfile was delete
+IN_DELETE_SELF =    0x00000400     # Self was deleted
+IN_MOVE_SELF =      0x00000800     # Self was moved
+IN_UNMOUNT =        0x00002000     # Backing fs was unmounted
+IN_Q_OVERFLOW =     0x00004000     # Event queued overflowed
+IN_IGNORED =        0x00008000     # File was ignored
 
 IN_ONLYDIR =         0x01000000      # only watch the path if it is a directory
 IN_DONT_FOLLOW =     0x02000000      # don't follow a sym link
@@ -101,7 +104,7 @@ def flag_to_human(mask):
     of human readable flags.
     """
     s = []
-    for (k, v) in _FLAG_TO_HUMAN.iteritems():
+    for (k, v) in six.iteritems(_FLAG_TO_HUMAN):
         if k & mask:
             s.append(v)
     return s
@@ -236,7 +239,7 @@ class INotify(FileDescriptor, object):
         return self.libc.syscall(self._init_syscall_id)
 
     def _inotify_add_watch(self, path, mask):
-        if type(path) is unicode:
+        if type(path) is six.text_type:
             path = path.encode('utf-8')
             self.libc.syscall.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
         else:
@@ -247,7 +250,7 @@ class INotify(FileDescriptor, object):
         return self.libc.syscall(self._rm_watch_syscall_id, self._fd, wd)
 
     def libc_inotify_add_watch(self, path, mask):
-        if type(path) is unicode:
+        if type(path) is six.text_type:
             path = path.encode('utf-8')
             self.libc.inotify_add_watch.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
         else:
@@ -284,8 +287,8 @@ class INotify(FileDescriptor, object):
         """
         A simple callback that you can use for tests
         """
-        print "event %s on %s %s" % (
-            ', '.join(flag_to_human(mask)), iwp.path, filename)
+        print("event %s on %s %s" % (
+            ', '.join(flag_to_human(mask)), iwp.path, filename))
 
     def doRead(self):
         """
@@ -405,7 +408,7 @@ class INotify(FileDescriptor, object):
         """
         if isinstance(path, FilePath):
             path = path.path
-        if type(path) is unicode:
+        if type(path) is six.text_type:
             path = path.encode('utf-8')
         path = os.path.realpath(path)
 
@@ -430,7 +433,7 @@ class INotify(FileDescriptor, object):
         """
         if isinstance(path, FilePath):
             path = path.path
-        if type(path) is unicode:
+        if type(path) is six.text_type:
             path = path.encode('utf-8')
         path = os.path.realpath(path)
         wd = self.isWatched(path)
@@ -447,7 +450,7 @@ class INotify(FileDescriptor, object):
         """
         if isinstance(path, FilePath):
             path = path.path
-        if type(path) is unicode:
+        if type(path) is six.text_type:
             path = path.encode('utf-8')
         return self._watchpaths.get(path, False)
 
@@ -457,11 +460,11 @@ class INotify(FileDescriptor, object):
 if __name__ == '__main__':
 
     i = INotify()
-    print i
-    i.watch(unicode('/tmp'), auto_add=True, callbacks=(i.notify,None), recursive=True)
+    print(i)
+    i.watch(six.text_type('/tmp'), auto_add=True, callbacks=(i.notify,None), recursive=True)
 
     i2 = INotify()
-    print i2
+    print(i2)
     i2.watch('/', auto_add=True, callbacks=(i2.notify,None), recursive=False)
 
     reactor.run()

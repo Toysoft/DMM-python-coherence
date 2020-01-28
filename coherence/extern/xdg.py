@@ -5,6 +5,8 @@
 
 # Copyright 2008, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
+from __future__ import print_function
 from os import getenv
 import os.path
 
@@ -37,4 +39,4 @@ def xdg_content():
     return None
 
 if __name__ == '__main__':
-    print xdg_content()
+    print(xdg_content())

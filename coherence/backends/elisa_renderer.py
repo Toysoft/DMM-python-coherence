@@ -3,6 +3,7 @@
 
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
 from twisted.internet.defer import Deferred

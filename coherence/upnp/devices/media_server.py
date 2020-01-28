@@ -5,11 +5,13 @@
 
 # Copyright 2006,2007 Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import re
 import traceback
-from StringIO import StringIO
-import urllib
+from io import StringIO
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 
 from twisted.internet import defer
 from twisted.web import static
@@ -35,6 +37,7 @@ from coherence.upnp.services.servers.media_receiver_registrar_server import Fake
 from coherence.upnp.devices.basics import BasicDeviceMixin
 
 from coherence import log
+import six
 
 COVER_REQUEST_INDICATOR = re.compile(".*?cover\.[A-Z|a-z]{3,4}$")
 
@@ -64,10 +67,11 @@ class MSRoot(resource.Resource, log.Loggable):
     #    request.finish()
 
     def getChildWithDefault(self, path, request):
+        path = six.ensure_str(path)
         self.info('%s getChildWithDefault, %s, %s, %s %s' % (self.server.device_type,
                                 request.method, path, request.uri, request.client))
         headers = request.getAllHeaders()
-        self.msg( request.getAllHeaders())
+
 
         try:
             if headers['getcontentfeatures.dlna.org'] != '1':
@@ -89,7 +93,7 @@ class MSRoot(resource.Resource, log.Loggable):
                     request.setHeader('CaptionInfo.sec', caption)
                     return static.Data('','text/html')
                 except:
-                    print traceback.format_exc()
+                    print(traceback.format_exc())
                     request.setResponseCode(404)
                     return static.Data('<html><p>the requested srt file was not found</p></html>','text/html')
 
@@ -191,7 +195,7 @@ class MSRoot(resource.Resource, log.Loggable):
             ua = headers.get('user-agent', '')
             if ua.find('Xbox/') == 0 or ua.startswith("""Mozilla/4.0 (compatible; UPnP/1.0; Windows"""):
                 self.info('XBox/WMP alert, we need to simulate a Windows Media Connect server')
-                if self.children.has_key('xbox-description-1.xml'):
+                if 'xbox-description-1.xml' in self.children:
                     self.msg( 'returning xbox-description-1.xml')
                     return self.children['xbox-description-1.xml']
             elif ua.find('SEC_HHP_BD') == 0:
@@ -258,7 +262,7 @@ class MSRoot(resource.Resource, log.Loggable):
                             msg = "<html><p>Device restarted. Config file not modified</p></html>" #constructConfigData(new_backend)
                     request.setResponseCode(202)
                     return static.Data(msg,'text/html')#'text/xml')
-                except SyntaxError, e:
+                except SyntaxError as e:
                     request.setResponseCode(400)
                     return static.Data("<html><p>Invalid data posted:<BR>%s</p></html>" % e,'text/html')                        
             else:
@@ -266,7 +270,7 @@ class MSRoot(resource.Resource, log.Loggable):
                 request.setResponseCode(405)
                 return static.Data("<html><p>This resource does not allow the requested HTTP method</p></html>",'text/html')
 
-        if self.children.has_key(path):
+        if path in self.children:
             return self.children[path]
         if request.uri == '/':
             return self
@@ -280,9 +284,9 @@ class MSRoot(resource.Resource, log.Loggable):
 
     def import_file(self,name,request):
         self.info("import file, id %s" % name)
-        print "import file, id %s" % name
+        print("import file, id %s" % name)
         def got_file(ch):
-            print "ch", ch
+            print("ch", ch)
             if ch is not None:
                 if hasattr(self.store,'backend_import'):
                     response_code = self.store.backend_import(ch,request.content)
@@ -320,7 +324,7 @@ class MSRoot(resource.Resource, log.Loggable):
             if(request.method == 'GET' or
                request.method == 'HEAD'):
                 headers = request.getAllHeaders()
-                if headers.has_key('content-length'):
+                if 'content-length' in headers:
                     self.warning('%s request with content-length %s header - sanitizing' % (
                                     request.method,
                                     headers['content-length']))
@@ -347,7 +351,7 @@ class MSRoot(resource.Resource, log.Loggable):
                 p = ch.get_path()
             except TypeError:
                 return self.list_content(name, ch, request)
-            except Exception, msg:
+            except Exception as msg:
                 self.debug("error accessing items path %r" % msg)
                 self.debug(traceback.format_exc())
                 return self.list_content(name, ch, request)
@@ -398,7 +402,7 @@ class MSRoot(resource.Resource, log.Loggable):
                         elif hasattr(c,'get_path') and c.get_path != None:
                             #path = c.get_path().encode('utf-8').encode('string_escape')
                             path = c.get_path()
-                            if isinstance(path,unicode):
+                            if isinstance(path,six.text_type):
                                 path = path.encode('ascii','xmlcharrefreplace')
                             else:
                                 path = path.decode('utf-8').encode('ascii','xmlcharrefreplace')
@@ -411,7 +415,7 @@ class MSRoot(resource.Resource, log.Loggable):
                         title = c.get_name()
                         self.debug( 'title is:', type(title))
                         try:
-                            if isinstance(title,unicode):
+                            if isinstance(title,six.text_type):
                                 title = title.encode('ascii','xmlcharrefreplace')
                             else:
                                 title = title.decode('utf-8').encode('ascii','xmlcharrefreplace')
@@ -425,7 +429,7 @@ class MSRoot(resource.Resource, log.Loggable):
 
             children = item.get_children()
             if isinstance(children, defer.Deferred):
-                print "list_content, we have a Deferred", children
+                print("list_content, we have a Deferred", children)
                 children.addCallback(build_page,page)
                 #children.addErrback(....) #FIXME
                 return children
@@ -434,7 +438,7 @@ class MSRoot(resource.Resource, log.Loggable):
 
         elif( hasattr(item,'mimetype') and item.mimetype.find('image/') == 0):
             #path = item.get_path().encode('utf-8').encode('string_escape')
-            path = urllib.quote(item.get_path().encode('utf-8'))
+            path = six.moves.urllib.parse.quote(item.get_path().encode('utf-8'))
             title = item.get_name().decode('utf-8').encode('ascii','xmlcharrefreplace')
             page += """<p><img src="%s" alt="%s"></p>""" % \
                                     (path, title)
@@ -507,7 +511,7 @@ class XboxRootDeviceXML(static.Data):
             for icon in icons:
 
                 icon_path = ''
-                if icon.has_key('url'):
+                if 'url' in icon:
                     if icon['url'].startswith('file://'):
                         icon_path = icon['url'][7:]
                     elif icon['url'] == '.face':
@@ -578,7 +582,7 @@ class XboxRootDeviceXML(static.Data):
 
         #if self.has_level(LOG_DEBUG):
         #    indent( root)
-        self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring( root, encoding='utf-8')
+        self.xml = six.ensure_binary(ET.tostring( root, encoding='utf8'))
         static.Data.__init__(self, self.xml, 'text/xml')
 
 class MediaServer(log.Loggable,BasicDeviceMixin):
@@ -621,7 +625,7 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
         try:
             self.connection_manager_server = ConnectionManagerServer(self)
             self._services.append(self.connection_manager_server)
-        except LookupError,msg:
+        except LookupError as msg:
             self.warning( 'ConnectionManagerServer', msg)
             raise LookupError(msg)
 
@@ -631,7 +635,7 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
                 transcoding = True
             self.content_directory_server = ContentDirectoryServer(self,transcoding=transcoding)
             self._services.append(self.content_directory_server)
-        except LookupError,msg:
+        except LookupError as msg:
             self.warning( 'ContentDirectoryServer', msg)
             raise LookupError(msg)
 
@@ -639,13 +643,13 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
             self.media_receiver_registrar_server = MediaReceiverRegistrarServer(self,
                                                         backend=FakeMediaReceiverRegistrarBackend())
             self._services.append(self.media_receiver_registrar_server)
-        except LookupError,msg:
+        except LookupError as msg:
             self.warning( 'MediaReceiverRegistrarServer (optional)', msg)
 
         try:
             self.scheduled_recording_server = ScheduledRecordingServer(self)
             self._services.append(self.scheduled_recording_server)
-        except LookupError,msg:
+        except LookupError as msg:
             self.info( 'ScheduledRecordingServer', msg)
 
         upnp_init = getattr(self.backend, "upnp_init", None)
@@ -721,7 +725,7 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
             self.web_resource.putChild('X_MS_MediaReceiverRegistrar', self.media_receiver_registrar_server)
 
         for icon in self.icons:
-            if icon.has_key('url'):
+            if 'url' in icon:
                 if icon['url'].startswith('file://'):
                     if os.path.exists(icon['url'][7:]):
                         self.web_resource.putChild(os.path.basename(icon['url']),

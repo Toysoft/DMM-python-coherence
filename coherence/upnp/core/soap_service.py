@@ -3,6 +3,8 @@
 
 # Copyright 2007 - Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
+from __future__ import print_function
 from twisted.web import server, resource
 from twisted.python import failure
 from twisted.internet import defer
@@ -99,7 +101,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
 
         def print_c(e):
             for c in e.getchildren():
-                print c, c.tag
+                print(c, c.tag)
                 print_c(c)
 
         tree = parse_xml(data)
@@ -151,7 +153,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
             #if(headers.has_key('user-agent') and
             #        headers['user-agent'].startswith("""Mozilla/4.0 (compatible; UPnP/1.0; Windows""")):
             #    keywords['X_UPnPClient'] = 'XBox'
-            if(headers.has_key('x-av-client-info') and
+            if('x-av-client-info' in headers and
                     headers['x-av-client-info'].find('"PLAYSTATION3') > 0):
                 keywords['X_UPnPClient'] = 'PLAYSTATION3'
 

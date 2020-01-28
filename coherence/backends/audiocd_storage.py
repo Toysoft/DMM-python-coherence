@@ -23,6 +23,7 @@
 
 # Copyright 2010, Jean-Michel Sizun
 
+from __future__ import absolute_import
 import CDDB, DiscID
 
 from twisted.internet import reactor,threads
@@ -33,6 +34,7 @@ from coherence import log
 from coherence.transcoder import GStreamerPipeline
 
 from coherence.backend import AbstractBackendStore, Container, BackendItem 
+from six.moves import range
 
 PLAY_TRACK_GST_PIPELINE = "cdiocddasrc device=%s track=%d ! wavenc name=enc"
 TRACK_MIMETYPE = "audio/x-wav"
@@ -135,7 +137,7 @@ class AudioCDStore(AbstractBackendStore):
         self.disc_title = query_info['title'].encode('utf-8')
         tracks = {}
         for i in range(track_count):
-            tracks[i+1] = read_info['TTITLE' + `i`].decode('ISO-8859-1').encode('utf-8')
+            tracks[i+1] = read_info['TTITLE' + repr(i)].decode('ISO-8859-1').encode('utf-8')
 
         self.name = self.disc_title
 

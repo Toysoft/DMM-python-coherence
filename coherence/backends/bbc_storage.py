@@ -5,6 +5,8 @@
 
 # Copyright 2008 Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
+from __future__ import print_function
 from coherence.backend import BackendStore
 from coherence.backend import BackendItem
 from coherence.upnp.core import DIDLLite
@@ -14,6 +16,7 @@ from twisted.internet import reactor
 from twisted.python.util import OrderedDict
 
 from coherence.extern.et import parse_xml
+import six
 
 ROOT_CONTAINER_ID = 0
 SERIES_CONTAINER_ID = 100
@@ -62,7 +65,7 @@ class Container(BackendItem):
 
     def add_child(self, child):
         id = child.id
-        if isinstance(child.id, basestring):
+        if isinstance(child.id, six.string_types):
             _,id = child.id.split('.')
         self.children.append(child)
         self.item.childCount += 1
@@ -120,7 +123,7 @@ class BBCStore(BackendStore):
 
     def get_by_id(self,id):
         #print "looking for id %r" % id
-        if isinstance(id, basestring):
+        if isinstance(id, six.string_types):
             id = id.split('@',1)
             id = id[0]
         try:
@@ -138,7 +141,7 @@ class BBCStore(BackendStore):
     def update_data(self):
 
         def fail(f):
-            print "fail", f
+            print("fail", f)
             return f
 
         dfr = getPage(self.rss_url)

@@ -3,6 +3,7 @@
 
 # Copyright 2008, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 from coherence.upnp.services.clients.switch_power_client import SwitchPowerClient
 
 from coherence import log

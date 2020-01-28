@@ -5,6 +5,7 @@
 
 # Copyright 2010 Frank Scholz <dev@coherence-project.org>
 
+from __future__ import absolute_import
 from coherence.upnp.devices.wan_device_client import WANDeviceClient
 
 from coherence import log

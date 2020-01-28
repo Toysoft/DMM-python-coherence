@@ -6,6 +6,7 @@
 # Copyright 2007, Frank Scholz <coherence@beebits.net>
 # Copyright 2008,2009 Jean-Michel Sizun <jmDOTsizunATfreeDOTfr>
 
+from __future__ import absolute_import
 from twisted.internet import defer,reactor
 from twisted.web import server
 
@@ -21,6 +22,8 @@ from coherence.backend import BackendItem, BackendStore
 import zlib
 
 from coherence.backend import BackendStore,BackendItem
+import six
+from six.moves import map
 
 
 ROOT_CONTAINER_ID = 0
@@ -77,7 +80,7 @@ class ProxyStream(utils.ReverseProxyUriResource, log.Loggable):
         if request.clientproto == 'HTTP/1.1':
             self.connection = request.getHeader('connection')
             if self.connection:
-                tokens = map(str.lower, self.connection.split(' '))
+                tokens = list(map(str.lower, self.connection.split(' ')))
                 if 'close' in tokens:
                     d = request.notifyFinish()
                     d.addBoth(self.requestFinished)
@@ -106,7 +109,7 @@ class Container(BackendItem):
 
     def add_child(self, child):
         id = child.id
-        if isinstance(child.id, basestring):
+        if isinstance(child.id, six.string_types):
             _,id = child.id.split('.')
         if self.children is None:
             self.children = []
@@ -233,7 +236,7 @@ class ITVStore(BackendStore):
         return len(self.store)
 
     def get_by_id(self,id):
-        if isinstance(id, basestring):
+        if isinstance(id, six.string_types):
             id = id.split('@',1)
             id = id[0]
         try:

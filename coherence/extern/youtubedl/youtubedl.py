@@ -4,8 +4,10 @@
 # Author: Danny Colligan
 # Author: Jean-Michel Sizun (integration within coherence framework)
 # License: Public domain code
-import htmlentitydefs
-import httplib
+from __future__ import absolute_import
+from __future__ import print_function
+import six.moves.html_entities
+import six.moves.http_client
 import locale
 import math
 import netrc
@@ -16,8 +18,11 @@ import socket
 import string
 import sys
 import time
-from urllib import urlencode, unquote, unquote_plus
+from six.moves.urllib.parse import urlencode, unquote, unquote_plus
 from coherence.upnp.core.utils import getPage
+from six import unichr
+import six
+from six.moves import range
 
 std_headers = {
     'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 6.0; en-US; rv:1.9.1.2) Gecko/20090729 Firefox/3.5.2',
@@ -152,7 +157,7 @@ class FileDownloader(object):
     def pmkdir(filename):
         """Create directory components in filename. Similar to Unix "mkdir -p"."""
         components = filename.split(os.sep)
-        aggregate = [os.sep.join(components[0:x]) for x in xrange(1, len(components))]
+        aggregate = [os.sep.join(components[0:x]) for x in range(1, len(components))]
         aggregate = ['%s%s' % (x, os.sep) for x in aggregate] # Finish names with separator
         for dir in aggregate:
             if not os.path.exists(dir):
@@ -167,7 +172,7 @@ class FileDownloader(object):
         if bytes == 0.0:
             exponent = 0
         else:
-            exponent = long(math.log(bytes, 1024.0))
+            exponent = int(math.log(bytes, 1024.0))
         suffix = 'bkMGTPEZY'[exponent]
         converted = float(bytes) / float(1024**exponent)
         return '%.2f%s' % (converted, suffix)
@@ -186,7 +191,7 @@ class FileDownloader(object):
         if current == 0 or dif < 0.001: # One millisecond
             return '--:--'
         rate = float(current) / dif
-        eta = long((float(total) - float(current)) / rate)
+        eta = int((float(total) - float(current)) / rate)
         (eta_mins, eta_secs) = divmod(eta, 60)
         if eta_mins > 99:
             return '--:--'
@@ -204,13 +209,13 @@ class FileDownloader(object):
         new_min = max(bytes / 2.0, 1.0)
         new_max = min(max(bytes * 2.0, 1.0), 4194304) # Do not surpass 4 MB
         if elapsed_time < 0.001:
-            return long(new_max)
+            return int(new_max)
         rate = bytes / elapsed_time
         if rate > new_max:
-            return long(new_max)
+            return int(new_max)
         if rate < new_min:
-            return long(new_min)
-        return long(rate)
+            return int(new_min)
+        return int(rate)
 
     @staticmethod
     def parse_bytes(bytestr):
@@ -220,13 +225,13 @@ class FileDownloader(object):
             return None
         number = float(matchobj.group(1))
         multiplier = 1024.0 ** 'bkmgtpezy'.index(matchobj.group(2).lower())
-        return long(round(number * multiplier))
+        return int(round(number * multiplier))
 
     @staticmethod
     def verify_url(url):
         """Verify a URL is valid and data could be downloaded. Return real data URL."""
-        request = urllib2.Request(url, None, std_headers)
-        data = urllib2.urlopen(request)
+        request = six.moves.urllib.request.Request(url, None, std_headers)
+        data = six.moves.urllib.request.urlopen(request)
         data.read(1)
         url = data.geturl()
         data.close()
@@ -244,12 +249,12 @@ class FileDownloader(object):
     def to_stdout(self, message, skip_eol=False):
         """Print message to stdout if not in quiet mode."""
         if not self.params.get('quiet', False):
-            print (u'%s%s' % (message, [u'\n', u''][skip_eol])).encode(preferredencoding()),
+            print((u'%s%s' % (message, [u'\n', u''][skip_eol])).encode(preferredencoding()), end=' ')
             sys.stdout.flush()
     
     def to_stderr(self, message):
         """Print message to stderr."""
-        print >>sys.stderr, message.encode(preferredencoding())
+        print(message.encode(preferredencoding()), file=sys.stderr)
     
     def fixed_template(self):
         """Checks if the output template is fixed."""
@@ -312,22 +317,22 @@ class FileDownloader(object):
         if self.params.get('simulate', False):
             try:
                 info_dict['url'] = self.verify_url(info_dict['url'])
-            except (OSError, IOError, urllib2.URLError, httplib.HTTPException, socket.error), err:
+            except (OSError, IOError, six.moves.urllib.error.URLError, six.moves.http_client.HTTPException, socket.error) as err:
                 raise UnavailableFormatError
 
             # Forced printings
             if self.params.get('forcetitle', False):
-                print info_dict['title'].encode(preferredencoding())
+                print(info_dict['title'].encode(preferredencoding()))
             if self.params.get('forceurl', False):
-                print info_dict['url'].encode(preferredencoding())
+                print(info_dict['url'].encode(preferredencoding()))
 
             return
             
         try:
             template_dict = dict(info_dict)
-            template_dict['epoch'] = unicode(long(time.time()))
+            template_dict['epoch'] = six.text_type(int(time.time()))
             filename = self.params['outtmpl'] % template_dict
-        except (ValueError, KeyError), err:
+        except (ValueError, KeyError) as err:
             self.trouble('ERROR: invalid output template or system charset: %s' % str(err))
         if self.params['nooverwrites'] and os.path.exists(filename):
             self.to_stderr(u'WARNING: file exists: %s; skipping' % filename)
@@ -335,25 +340,25 @@ class FileDownloader(object):
 
         try:
             self.pmkdir(filename)
-        except (OSError, IOError), err:
+        except (OSError, IOError) as err:
             self.trouble('ERROR: unable to create directories: %s' % str(err))
             return
 
         try:
             success = self._do_download(filename, info_dict['url'])
-        except (OSError, IOError), err:
+        except (OSError, IOError) as err:
             raise UnavailableFormatError
-        except (urllib2.URLError, httplib.HTTPException, socket.error), err:
+        except (six.moves.urllib.error.URLError, six.moves.http_client.HTTPException, socket.error) as err:
             self.trouble('ERROR: unable to download video data: %s' % str(err))
             return
-        except (ContentTooShortError, ), err:
+        except (ContentTooShortError, ) as err:
             self.trouble('ERROR: content too short (expected %s bytes and served %s)' % (err.expected, err.downloaded))
             return
 
         if success:
             try:
                 self.post_process(filename, info_dict)
-            except (PostProcessingError), err:
+            except (PostProcessingError) as err:
                 self.trouble('ERROR: postprocessing: %s' % str(err))
                 return
 
@@ -480,11 +485,11 @@ class InfoExtractor(object):
     def to_stdout(self, message):
         """Print message to stdout if downloader is not in quiet mode."""
         if self._downloader is None or not self._downloader.get_params().get('quiet', False):
-            print message
+            print(message)
 
     def to_stderr(self, message):
         """Print message to stderr."""
-        print >>sys.stderr, message
+        print(message, file=sys.stderr)
 
     def _real_initialize(self):
         """Real initialization process. Redefine in subclasses."""
@@ -522,8 +527,8 @@ class YoutubeIE(InfoExtractor):
         entity = matchobj.group(1)
 
         # Known non-numeric HTML entity
-        if entity in htmlentitydefs.name2codepoint:
-            return unichr(htmlentitydefs.name2codepoint[entity])
+        if entity in six.moves.html_entities.name2codepoint:
+            return unichr(six.moves.html_entities.name2codepoint[entity])
 
         # Unicode character
         mobj = re.match(ur'(?u)#(x?\d+)', entity)
@@ -534,7 +539,7 @@ class YoutubeIE(InfoExtractor):
                 numstr = u'0%s' % numstr
             else:
                 base = 10
-            return unichr(long(numstr, base))
+            return unichr(int(numstr, base))
 
         # Unknown entity in name, return its literal representation
         return (u'&%s;' % entity)
@@ -589,19 +594,19 @@ class YoutubeIE(InfoExtractor):
                     password = info[2]
                 else:
                     raise netrc.NetrcParseError('No authenticators for %s' % self._NETRC_MACHINE)
-            except (IOError, netrc.NetrcParseError), err:
+            except (IOError, netrc.NetrcParseError) as err:
                 self._downloader.to_stderr(u'WARNING: parsing .netrc: %s' % str(err))
                 return
 
         def gotAgeConfirmedPage(result):
-            print "Age confirmed in Youtube"
+            print("Age confirmed in Youtube")
 
         def gotLoggedInPage(result):
             data,headers = result
             if re.search(r'(?i)<form[^>]* name="loginForm"', data) is not None:
-                print 'WARNING: unable to log in: bad username or password'
+                print('WARNING: unable to log in: bad username or password')
                 return
-            print "logged in in Youtube"
+            print("logged in in Youtube")
 
             # Confirm age
             age_form = {
@@ -613,8 +618,8 @@ class YoutubeIE(InfoExtractor):
             d.addCallback(gotAgeConfirmedPage)
 
         def gotLoginError(error):
-            print "Unable to login to Youtube : %s:%s @ %s" % (username, password, self._LOGIN_URL)
-            print "Error: %s" % error
+            print("Unable to login to Youtube : %s:%s @ %s" % (username, password, self._LOGIN_URL))
+            print("Error: %s" % error)
             return
 
         def gotLanguageSet(result):
@@ -635,8 +640,8 @@ class YoutubeIE(InfoExtractor):
             d.addCallbacks(gotLoggedInPage, gotLoginError)
             
         def gotLanguageSetError(error):
-            print "Unable to process Youtube request: %s" % self._LANG_URL
-            print "Error: %s" % error
+            print("Unable to process Youtube request: %s" % self._LANG_URL)
+            print("Error: %s" % error)
             return
 
         # Set language (will lead to log in, and then age confirmation)
@@ -677,13 +682,13 @@ class YoutubeIE(InfoExtractor):
             
             # check format
             if (format_param == '22'):
-                print "Check if HD video exists..."
+                print("Check if HD video exists...")
                 mobj = re.search(r'var isHDAvailable = true;', video_info_webpage)
                 if mobj is None:
-                    print "No HD video -> switch back to SD"
+                    print("No HD video -> switch back to SD")
                     format_param = '18'
                 else:
-                    print "...HD video OK!"
+                    print("...HD video OK!")
 
             # "t" param
             mobj = re.search(r'(?m)&token=([^&]+)(?:&|$)', video_info_webpage)
@@ -692,7 +697,7 @@ class YoutubeIE(InfoExtractor):
                 mobj = re.search(r'(?m)&reason=([^&]+)(?:&|$)', video_info_webpage)
                 if mobj is None:
                 	self.to_stderr(u'ERROR: unable to extract "t" parameter')
-                	print video_info_webpage
+                	print(video_info_webpage)
                 	return [None]
                 else:
                     reason = unquote_plus(mobj.group(1))
@@ -735,8 +740,8 @@ class YoutubeIE(InfoExtractor):
                 }]
 
         def gotError(error):
-            print "Unable to process Youtube request: %s" % url
-            print "Error: %s" % error
+            print("Unable to process Youtube request: %s" % url)
+            print("Error: %s" % error)
             return [None]
 
         d = getPage(video_info_url, headers=std_headers)
@@ -780,11 +785,11 @@ class MetacafeIE(InfoExtractor):
 
     def _real_initialize(self):
         # Retrieve disclaimer
-        request = urllib2.Request(self._DISCLAIMER, None, std_headers)
+        request = six.moves.urllib.request.Request(self._DISCLAIMER, None, std_headers)
         try:
             self.report_disclaimer()
-            disclaimer = urllib2.urlopen(request).read()
-        except (urllib2.URLError, httplib.HTTPException, socket.error), err:
+            disclaimer = six.moves.urllib.request.urlopen(request).read()
+        except (six.moves.urllib.error.URLError, six.moves.http_client.HTTPException, socket.error) as err:
             self._downloader.trouble(u'ERROR: unable to retrieve disclaimer: %s' % str(err))
             return
 
@@ -793,11 +798,11 @@ class MetacafeIE(InfoExtractor):
             'filters': '0',
             'submit': "Continue - I'm over 18",
             }
-        request = urllib2.Request(self._FILTER_POST, urllib.urlencode(disclaimer_form), std_headers)
+        request = six.moves.urllib.request.Request(self._FILTER_POST, six.moves.urllib.parse.urlencode(disclaimer_form), std_headers)
         try:
             self.report_age_confirmation()
-            disclaimer = urllib2.urlopen(request).read()
-        except (urllib2.URLError, httplib.HTTPException, socket.error), err:
+            disclaimer = six.moves.urllib.request.urlopen(request).read()
+        except (six.moves.urllib.error.URLError, six.moves.http_client.HTTPException, socket.error) as err:
             self._downloader.trouble(u'ERROR: unable to confirm age: %s' % str(err))
             return
     
@@ -820,11 +825,11 @@ class MetacafeIE(InfoExtractor):
         video_extension = 'flv'
 
         # Retrieve video webpage to extract further information
-        request = urllib2.Request('http://www.metacafe.com/watch/%s/' % video_id)
+        request = six.moves.urllib.request.Request('http://www.metacafe.com/watch/%s/' % video_id)
         try:
             self.report_download_webpage(video_id)
-            webpage = urllib2.urlopen(request).read()
-        except (urllib2.URLError, httplib.HTTPException, socket.error), err:
+            webpage = six.moves.urllib.request.urlopen(request).read()
+        except (six.moves.urllib.error.URLError, six.moves.http_client.HTTPException, socket.error) as err:
             self._downloader.trouble(u'ERROR: unable retrieve video webpage: %s' % str(err))
             return
 
@@ -834,7 +839,7 @@ class MetacafeIE(InfoExtractor):
         if mobj is None:
             self._downloader.trouble(u'ERROR: unable to extract media URL')
             return
-        mediaURL = urllib.unquote(mobj.group(1))
+        mediaURL = six.moves.urllib.parse.unquote(mobj.group(1))
 
        #mobj = re.search(r'(?m)&gdaKey=(.*?)&', webpage)
         #if mobj is None:
@@ -912,7 +917,7 @@ class YoutubeSearchIE(InfoExtractor):
             return
         else:
             try:
-                n = long(prefix)
+                n = int(prefix)
                 if n <= 0:
                     self._downloader.trouble(u'ERROR: invalid download number %s for query "%s"' % (n, query))
                     return
@@ -934,11 +939,11 @@ class YoutubeSearchIE(InfoExtractor):
 
         while True:
             self.report_download_page(query, pagenum)
-            result_url = self._TEMPLATE_URL % (urllib.quote_plus(query), pagenum)
-            request = urllib2.Request(result_url, None, std_headers)
+            result_url = self._TEMPLATE_URL % (six.moves.urllib.parse.quote_plus(query), pagenum)
+            request = six.moves.urllib.request.Request(result_url, None, std_headers)
             try:
-                page = urllib2.urlopen(request).read()
-            except (urllib2.URLError, httplib.HTTPException, socket.error), err:
+                page = six.moves.urllib.request.urlopen(request).read()
+            except (six.moves.urllib.error.URLError, six.moves.http_client.HTTPException, socket.error) as err:
                 self._downloader.trouble(u'ERROR: unable to download webpage: %s' % str(err))
                 return
 
@@ -1000,10 +1005,10 @@ class YoutubePlaylistIE(InfoExtractor):
 
         while True:
             self.report_download_page(playlist_id, pagenum)
-            request = urllib2.Request(self._TEMPLATE_URL % (playlist_id, pagenum), None, std_headers)
+            request = six.moves.urllib.request.Request(self._TEMPLATE_URL % (playlist_id, pagenum), None, std_headers)
             try:
-                page = urllib2.urlopen(request).read()
-            except (urllib2.URLError, httplib.HTTPException, socket.error), err:
+                page = six.moves.urllib.request.urlopen(request).read()
+            except (six.moves.urllib.error.URLError, six.moves.http_client.HTTPException, socket.error) as err:
                 self._downloader.trouble(u'ERROR: unable to download webpage: %s' % str(err))
                 return
 
@@ -1047,11 +1052,11 @@ class PostProcessor(object):
     def to_stdout(self, message):
         """Print message to stdout if downloader is not in quiet mode."""
         if self._downloader is None or not self._downloader.get_params().get('quiet', False):
-            print message
+            print(message)
 
     def to_stderr(self, message):
         """Print message to stderr."""
-        print >>sys.stderr, message
+        print(message, file=sys.stderr)
 
     def set_downloader(self, downloader):
         """Sets the downloader for this PP."""
@@ -1085,8 +1090,8 @@ if __name__ == '__main__':
         import optparse
 
         # General configuration
-        urllib2.install_opener(urllib2.build_opener(urllib2.ProxyHandler()))
-        urllib2.install_opener(urllib2.build_opener(urllib2.HTTPCookieProcessor()))
+        six.moves.urllib.request.install_opener(six.moves.urllib.request.build_opener(six.moves.urllib.request.ProxyHandler()))
+        six.moves.urllib.request.install_opener(six.moves.urllib.request.build_opener(six.moves.urllib.request.HTTPCookieProcessor()))
         socket.setdefaulttimeout(300) # 5 minutes should be enough (famous last words)
 
         # Parse command line

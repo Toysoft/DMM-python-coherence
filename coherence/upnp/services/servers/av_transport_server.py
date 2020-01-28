@@ -5,6 +5,7 @@
 
 # AVTransport service
 
+from __future__ import absolute_import
 from twisted.web import resource
 
 from coherence.upnp.core.soap_service import UPnPPublisher

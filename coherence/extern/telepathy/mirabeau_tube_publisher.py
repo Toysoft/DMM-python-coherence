@@ -3,6 +3,7 @@
 
 # Copyright 2009 Philippe Normand <phil@base-art.net>
 
+from __future__ import absolute_import
 import gobject
 from dbus import PROPERTIES_IFACE
 
@@ -86,7 +87,7 @@ class MirabeauTubePublisherMixin(tube.TubePublisherMixin):
             self.announce_done = True
             allowed_device_types = [u'urn:schemas-upnp-org:device:MediaServer:2',
                                     u'urn:schemas-upnp-org:device:MediaServer:1']
-            devices = self.coherence.dbus.devices.values()
+            devices = list(self.coherence.dbus.devices.values())
             for device in devices:
                 if device.get_device_type() in allowed_device_types:
                     self._register_device(device)

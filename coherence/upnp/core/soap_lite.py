@@ -10,9 +10,11 @@
 
     inspired by ElementSOAP.py
 """
+from __future__ import absolute_import
 from twisted.python.util import OrderedDict
 
 from coherence.extern.et import ET
+import six
 
 NS_SOAP_ENV = "{http://schemas.xmlsoap.org/soap/envelope/}"
 NS_SOAP_ENC = "{http://schemas.xmlsoap.org/soap/encoding/}"
@@ -88,14 +90,14 @@ def build_soap_call(method, arguments, is_response=False,
     # append the arguments
     if isinstance(arguments,(dict,OrderedDict)) :
         type_map = {str: 'xsd:string',
-                    unicode: 'xsd:string',
+                    six.text_type: 'xsd:string',
                     int: 'xsd:int',
                     float: 'xsd:float',
                     bool: 'xsd:boolean'}
 
-        for arg_name, arg_val in arguments.iteritems():
+        for arg_name, arg_val in six.iteritems(arguments):
             arg_type = type_map[type(arg_val)]
-            if arg_type == 'xsd:string' and type(arg_val) == unicode:
+            if arg_type == 'xsd:string' and type(arg_val) == six.text_type:
                 arg_val = arg_val.encode('utf-8')
             if arg_type == 'xsd:int' or arg_type == 'xsd:float':
                 arg_val = str(arg_val)

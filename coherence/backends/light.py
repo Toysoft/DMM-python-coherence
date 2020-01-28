@@ -3,6 +3,8 @@
 
 # Copyright 2008, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
+from __future__ import print_function
 import coherence.extern.louie as louie
 
 from coherence.upnp.core.utils import generalise_boolean
@@ -40,7 +42,7 @@ class SimpleLight(Backend):
         if self.server:
             self.server.switch_power_server.set_variable(0, 'Target', self.state)
             self.server.switch_power_server.set_variable(0, 'Status', self.state)
-        print "we have been switched to state", self.state
+        print("we have been switched to state", self.state)
         return {}
 
 
@@ -70,7 +72,7 @@ class BetterLight(Backend):
         if self.server:
             self.server.switch_power_server.set_variable(0, 'Target', self.state)
             self.server.switch_power_server.set_variable(0, 'Status', self.state)
-        print "we have been switched to state", self.state
+        print("we have been switched to state", self.state)
         return {}
 
     def upnp_SetLoadLevelTarget(self,**kwargs):
@@ -80,7 +82,7 @@ class BetterLight(Backend):
         if self.server:
             self.server.dimming_server.set_variable(0, 'LoadLevelTarget', self.loadlevel)
             self.server.dimming_server.set_variable(0, 'LoadLevelStatus', self.loadlevel)
-        print "we have been dimmed to level", self.loadlevel
+        print("we have been dimmed to level", self.loadlevel)
         return {}
 
 

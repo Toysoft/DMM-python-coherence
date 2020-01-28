@@ -8,7 +8,10 @@
 
 # Copyright 2008, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
+from __future__ import print_function
 from coherence.extern.et import ET as ElementTree, indent, parse_xml
+import six
 
 class ConfigItem(object):
     """ the base """
@@ -101,7 +104,7 @@ class XmlDictObject(dict,ConfigItem):
         self[key] = value
 
     def __str__(self):
-        if self.has_key('_text'):
+        if '_text' in self:
             return self.__getitem__('_text')
         else:
             return ''
@@ -112,7 +115,7 @@ class XmlDictObject(dict,ConfigItem):
     @staticmethod
     def Wrap(x):
         if isinstance(x, dict):
-            return XmlDictObject((k, XmlDictObject.Wrap(v)) for (k, v) in x.iteritems())
+            return XmlDictObject((k, XmlDictObject.Wrap(v)) for (k, v) in six.iteritems(x))
         elif isinstance(x, list):
             return [XmlDictObject.Wrap(v) for v in x]
         else:
@@ -121,7 +124,7 @@ class XmlDictObject(dict,ConfigItem):
     @staticmethod
     def _UnWrap(x):
         if isinstance(x, dict):
-            return dict((k, XmlDictObject._UnWrap(v)) for (k, v) in x.iteritems())
+            return dict((k, XmlDictObject._UnWrap(v)) for (k, v) in six.iteritems(x))
         elif isinstance(x, list):
             return [XmlDictObject._UnWrap(v) for v in x]
         else:
@@ -134,7 +137,7 @@ def _ConvertDictToXmlRecurse(parent, dictitem,element2attr_mappings=None):
     assert type(dictitem) is not type([])
 
     if isinstance(dictitem, dict):
-        for (tag, child) in dictitem.iteritems():
+        for (tag, child) in six.iteritems(dictitem):
             if str(tag) == '_text':
                 parent.text = str(child)
 ##             elif str(tag) == '_attrs':
@@ -165,7 +168,7 @@ def _ConvertDictToXmlRecurse(parent, dictitem,element2attr_mappings=None):
             parent.text = str(dictitem)
 
 def ConvertDictToXml(xmldict,element2attr_mappings=None):
-    roottag = xmldict.keys()[0]
+    roottag = list(xmldict.keys())[0]
     root = ElementTree.Element(roottag)
     _ConvertDictToXmlRecurse(root, xmldict[roottag],element2attr_mappings=element2attr_mappings)
     return root
@@ -174,16 +177,16 @@ def _ConvertXmlToDictRecurse(node, dictclass):
     nodedict = dictclass()
 ##     if node.items():
 ##         nodedict.update({'_attrs': dict(node.items())})
-    if len(node.items()) > 0:
+    if len(list(node.items())) > 0:
         # if we have attributes, set them
-        attrs = dict(node.items())
+        attrs = dict(list(node.items()))
         nodedict.update(attrs)
         nodedict._attrs = attrs
 
     for child in node:
         # recursively add the element's children
         newitem = _ConvertXmlToDictRecurse(child, dictclass)
-        if nodedict.has_key(child.tag):
+        if child.tag in nodedict:
             # found duplicate tag, force a list
             if type(nodedict[child.tag]) is type([]):
                 # append to existing list
@@ -220,7 +223,7 @@ def main():
     #print '%r' % c.config
 
     #c.save(new_filename='config.new.xml')
-    print c.config['interface']
+    print(c.config['interface'])
 
     #for plugin in c.config.pluginlist.plugin:
     #    if plugin.active != 'no':

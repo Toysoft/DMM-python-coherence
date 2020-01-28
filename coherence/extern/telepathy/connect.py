@@ -3,6 +3,7 @@
 
 # Copyright 2009 Philippe Normand <phil@base-art.net>
 
+from __future__ import absolute_import
 import telepathy
 from telepathy.interfaces import CONN_MGR_INTERFACE, ACCOUNT_MANAGER, ACCOUNT, \
      CONNECTION
@@ -10,9 +11,10 @@ from telepathy.constants import CONNECTION_PRESENCE_TYPE_AVAILABLE
 
 import dbus
 from twisted.internet import defer
+import six
 
 def to_dbus_account(account):
-    for key, value in account.iteritems():
+    for key, value in six.iteritems(account):
         if value.lower() in ("false", "true"):
             value = bool(value)
         else:

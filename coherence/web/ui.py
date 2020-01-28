@@ -3,6 +3,7 @@
 
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 import os
 
 from twisted.internet import reactor
@@ -15,6 +16,7 @@ from zope.interface import implements, Interface
 import coherence.extern.louie as louie
 
 from coherence import log
+import six
 
 class IWeb(Interface):
 
@@ -60,8 +62,8 @@ class MenuFragment(athena.LiveElement, log.Loggable):
 
     def add_tab(self,title,active,id):
         self.info("add tab %s to the MenuFragment" % title)
-        new_tab = {u'title':unicode(title),
-                   u'active':unicode(active),
+        new_tab = {u'title':six.text_type(title),
+                   u'active':six.text_type(active),
                    u'athenaid':u'athenaid:%d' % id}
         for t in self.tabs:
             if t[u'title'] == new_tab[u'title']:
@@ -100,7 +102,7 @@ class DevicesFragment(athena.LiveElement, log.Loggable):
         for device in self.coherence.get_devices():
             if device is not None:
                 devices.append({u'name': device.get_markup_name(),
-                        u'usn':unicode(device.get_usn())})
+                        u'usn':six.text_type(device.get_usn())})
 
         louie.connect(self.add_device,
                 'Coherence.UPnP.Device.detection_completed', louie.Any)
@@ -121,11 +123,11 @@ class DevicesFragment(athena.LiveElement, log.Loggable):
                                                 device.get_device_type()))
         self.callRemote('addDevice',
                 {u'name': device.get_markup_name(),
-                u'usn':unicode(device.get_usn())})
+                u'usn':six.text_type(device.get_usn())})
 
     def remove_device(self, usn):
         self.info("DevicesFragment remove device %s", usn)
-        self.callRemote('removeDevice', unicode(usn))
+        self.callRemote('removeDevice', six.text_type(usn))
 
     def render_devices(self, ctx, data):
         cl = []

@@ -3,6 +3,8 @@
 
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
+from __future__ import print_function
 import re
 
 from twisted.spread import pb
@@ -190,7 +192,7 @@ if __name__ == '__main__':
         p = 'localhost'
 
         def got_result(result):
-            print result
+            print(result)
 
         f = MediaStore(None,'my media',p, 'http://localhost/',())
 

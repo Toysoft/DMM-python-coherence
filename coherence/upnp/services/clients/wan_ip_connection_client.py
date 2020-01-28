@@ -3,7 +3,9 @@
 
 # Copyright 2010, Frank Scholz <dev@coherence-project.org>
 
+from __future__ import absolute_import
 from twisted.internet import defer
+from six.moves import range
 
 
 class WANIPConnectionClient:

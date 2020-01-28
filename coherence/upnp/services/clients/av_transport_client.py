@@ -3,6 +3,7 @@
 
 # Copyright 2006-2008, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 from coherence import log
 
 class AVTransportClient(log.Loggable):

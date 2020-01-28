@@ -4,10 +4,12 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 
 import time
-import urllib2
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
 from coherence.upnp.core import action
 from coherence.upnp.core import event
 from coherence.upnp.core import variable
@@ -27,6 +29,7 @@ from twisted.internet import task
 import coherence.extern.louie as louie
 
 from coherence import log
+import six
 
 global subscribers
 subscribers = {}
@@ -35,7 +38,7 @@ def subscribe(service):
     subscribers[service.get_sid()] = service
 
 def unsubscribe(service):
-    if subscribers.has_key(service.get_sid()):
+    if service.get_sid() in subscribers:
         del subscribers[service.get_sid()]
 
 class Service(log.Loggable):
@@ -71,7 +74,7 @@ class Service(log.Loggable):
 
         self.client = None
 
-        parsed = urllib2.urlparse.urlparse(location)
+        parsed = six.moves.urllib.parse.urlparse(location)
         self.url_base = "%s://%s" % (parsed[0], parsed[1])
 
         self.parse_actions()
@@ -164,7 +167,7 @@ class Service(log.Loggable):
             for name, variable in variables.items():
                 del variables[name]
                 del variable
-            if variables.has_key(instance):
+            if instance in variables:
                 del variables[instance]
             del variables
         del self
@@ -292,7 +295,7 @@ class Service(log.Loggable):
                         self.info("updated var %r" % var)
                         if len(var.attrib) > 1:
                             self.info("Extended StateVariable %s - %r", var.tag, var.attrib)
-                            if var.attrib.has_key('channel') and var.attrib['channel'] != 'Master':
+                            if 'channel' in var.attrib and var.attrib['channel'] != 'Master':
                                 # TODO handle attributes that them selves have multiple instances
                                 self.info("Skipping update to %s its not for master channel %s", var.tag, var.attrib)
                                 pass
@@ -300,13 +303,13 @@ class Service(log.Loggable):
                                 if not self.get_state_variables(instance_id):
                                     # TODO Create instance ?
                                     self.error("%r update failed (not self.get_state_variables(instance_id)) %r", self, instance_id)
-                                elif not self.get_state_variables(instance_id).has_key(tag):
+                                elif tag not in self.get_state_variables(instance_id):
                                     # TODO Create instance StateVariable?
                                     # SONOS stuff
                                     self.error("%r update failed (not self.get_state_variables(instance_id).has_key(tag)) %r", self, tag)
                                 else:
                                     val = None
-                                    if var.attrib.has_key('val'):
+                                    if 'val' in var.attrib:
                                         val = var.attrib['val']
                                     #self.debug("%r update %r %r %r", self,namespace_uri, tag, var.attrib['val'])
                                     self.get_state_variable(tag, instance_id).update(var.attrib['val'])
@@ -445,7 +448,7 @@ class ServiceServer(log.Loggable):
         self.check_subscribers_loop.start(120.0, now=False)
 
         self.check_moderated_loop = None
-        if moderated_variables.has_key(self.service_type):
+        if self.service_type in moderated_variables:
             self.check_moderated_loop = task.LoopingCall(self.check_moderated_variables)
             #self.check_moderated_loop.start(5.0, now=False)
             self.check_moderated_loop.start(0.5, now=False)
@@ -670,7 +673,7 @@ class ServiceServer(log.Loggable):
         return False
 
     def simulate_notification(self):
-        print "simulate_notification for", self.id
+        print("simulate_notification for", self.id)
         self.set_variable(0, 'CurrentConnectionIDs', '0')
 
     def get_scpdXML(self):
@@ -825,7 +828,7 @@ class ServiceServer(log.Loggable):
                     if((hasattr(self,'implementation') and self.implementation == 'required') or
                         not hasattr(self,'implementation')):
                         self.warning('%s has a missing callback for %s action %s, service disabled' % (self.id,implementation,name))
-                    raise LookupError,"missing callback"
+                    raise LookupError("missing callback")
 
             new_action = action.Action(self, name, implementation, arguments)
             self._actions[name] = new_action
@@ -1045,16 +1048,16 @@ class ServiceControl:
 
         self.info("soap__generic", action, __name__, kwargs)
         del kwargs['soap_methodName']
-        if( kwargs.has_key('X_UPnPClient') and
+        if( 'X_UPnPClient' in kwargs and
                 kwargs['X_UPnPClient'] == 'XBox'):
             if(action.name == 'Browse' and
-                    kwargs.has_key('ContainerID')):
+                    'ContainerID' in kwargs):
                 """ XXX: THIS IS SICK """
                 kwargs['ObjectID'] = kwargs['ContainerID']
                 del kwargs['ContainerID']
 
         in_arguments = action.get_in_arguments()
-        for arg_name, arg in kwargs.iteritems():
+        for arg_name, arg in six.iteritems(kwargs):
             if arg_name.find('X_') == 0:
                 continue
             l = [ a for a in in_arguments if arg_name == a.get_name()]

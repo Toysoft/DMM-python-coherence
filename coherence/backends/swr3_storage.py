@@ -5,6 +5,7 @@
 
 # Copyright 2008,2009 Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 from datetime import datetime
 from email.Utils import parsedate_tz
 
@@ -16,6 +17,7 @@ from twisted.python.util import OrderedDict
 
 from coherence.upnp.core.utils import getPage
 from coherence.extern.et import parse_xml
+import six
 
 ROOT_CONTAINER_ID = 0
 
@@ -67,7 +69,7 @@ class Container(BackendItem):
 
     def add_child(self, child):
         id = child.id
-        if isinstance(child.id, basestring):
+        if isinstance(child.id, six.string_types):
             _,id = child.id.split('.')
         self.children.append(child)
         self.item.childCount += 1
@@ -149,7 +151,7 @@ class SWR3Store(BackendStore,BackendRssMixin):
         return self.next_id
 
     def get_by_id(self,id):
-        if isinstance(id, basestring):
+        if isinstance(id, six.string_types):
             id = id.split('@',1)
             id = id[0]
         try:

@@ -21,6 +21,8 @@ ProxyClient handleStatus HTTP/1.1 403 Invalid ticket
 # Copyright 2007, Frank Scholz <coherence@beebits.net>
 # Copyright 2007, Moritz Struebe <morty@gmx.net>
 
+from __future__ import absolute_import
+from __future__ import print_function
 from twisted.internet import defer
 
 from coherence.upnp.core import utils
@@ -34,7 +36,8 @@ from coherence.extern.simple_plugin import Plugin
 from coherence import log
 from coherence.backend import BackendItem, BackendStore
 
-from urlparse import urlsplit
+from six.moves.urllib.parse import urlsplit
+import six
 
 try:
     from hashlib import md5
@@ -111,15 +114,15 @@ class LastFMUser(log.Loggable):
         def got_page(result):
             result = utils.parse_xml(result, encoding='utf-8')
             self.getting_tracks = False
-            print self.getting_tracks
-            print "got Tracks"
+            print(self.getting_tracks)
+            print("got Tracks")
             for track in result.findall('trackList/track'):
                 data = {}
                 def get_data(name):
                     #print track.find(name).text.encode('utf-8')
                     return track.find(name).text.encode('utf-8')
                 #Fixme: This section needs some work
-                print "adding Track"
+                print("adding Track")
                 data['mimetype'] = 'audio/mpeg'
                 data['name'] =get_data('creator') + " - " + get_data('title')
                 data['title'] = get_data('title')
@@ -327,7 +330,7 @@ class LastFMStore(log.Loggable,Plugin):
         return str(self.__class__).split('.')[-1]
 
     def append( self, obj, parent):
-        if isinstance(obj, basestring):
+        if isinstance(obj, six.string_types):
             mimetype = 'directory'
         else:
             mimetype = obj['mimetype']
@@ -375,7 +378,7 @@ class LastFMStore(log.Loggable,Plugin):
         return len(self.store)
 
     def get_by_id(self,id):
-        if isinstance(id, basestring):
+        if isinstance(id, six.string_types):
             id = id.split('@',1)
             id = id[0]
         id = int(id)
@@ -412,7 +415,7 @@ def main():
     f = LastFMStore(None)
 
     def got_upnp_result(result):
-        print "upnp", result
+        print("upnp", result)
 
     f.upnp_init()
 

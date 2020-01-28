@@ -4,8 +4,11 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 import socket
 import time
+
+import six
 
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor
@@ -34,7 +37,9 @@ class MSearch(DatagramProtocol, log.Loggable):
             self.double_discover_loop = task.LoopingCall(self.double_discover)
             self.double_discover_loop.start(120.0)
 
-    def datagramReceived(self, data, (host, port)):
+    def datagramReceived(self, data, addr):
+        (host, port) = addr
+        data = six.ensure_str(data)
         cmd, headers = utils.parse_http_response(data)
         self.info('datagramReceived from %s:%d, protocol %s code %s' % (host, port, cmd[0], cmd[1]))
         if cmd[0].startswith('HTTP/1.') and cmd[1] == '200':
@@ -69,10 +74,10 @@ class MSearch(DatagramProtocol, log.Loggable):
                 'ST: ssdp:all',
                 'USER-AGENT: Coherence UDAP/2.0',
                 '','']
-        req = '\r\n'.join(req)
+        req = six.ensure_binary('\r\n'.join(req))
         try:
             self.transport.write(req, (addr, port))
-        except socket.error, msg:
+        except socket.error as msg:
             self.info("failure sending out the discovery message: %r" % msg)
 
     def discover(self):

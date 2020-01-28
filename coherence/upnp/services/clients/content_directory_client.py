@@ -4,6 +4,7 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 import sys, threading
 
 from twisted.internet import reactor, defer

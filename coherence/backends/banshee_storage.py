@@ -12,6 +12,7 @@ TODO:
 
 """
 
+from __future__ import absolute_import
 from twisted.internet import reactor, defer, task
 
 from coherence.extern import db_row
@@ -26,11 +27,12 @@ from sqlite3 import dbapi2
 import re
 import os
 import time
-from urlparse import urlsplit
-import urllib2
+from six.moves.urllib.parse import urlsplit
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
 
 
 import mimetypes
+import six
 mimetypes.init()
 mimetypes.add_type('audio/x-m4a', '.m4a')
 mimetypes.add_type('video/mp4', '.mp4')
@@ -491,7 +493,7 @@ class BaseTrack(BackendItem):
         return statinfo, resources
 
     def get_path(self):
-        return urllib2.unquote(self.location[7:].encode('utf-8'))
+        return six.moves.urllib.parse.unquote(self.location[7:].encode('utf-8'))
 
     def get_id(self):
         return "track.%d" % self.itemID
@@ -838,7 +840,7 @@ class BansheeStore(BackendStore, BansheeDB):
 
     def get_by_id(self,item_id):
         self.info("get_by_id %s" % item_id)
-        if isinstance(item_id, basestring) and item_id.find('.') > 0:
+        if isinstance(item_id, six.string_types) and item_id.find('.') > 0:
             item_id = item_id.split('@',1)
             item_type, item_id = item_id[0].split('.')[:2]
             item_id = int(item_id)

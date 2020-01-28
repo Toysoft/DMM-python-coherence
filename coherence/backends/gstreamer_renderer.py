@@ -3,7 +3,8 @@
 
 # Copyright 2006,2007,2008,2009 Frank Scholz <coherence@beebits.net>
 
-from sets import Set
+from __future__ import absolute_import
+from __future__ import print_function
 
 from twisted.internet import reactor, defer
 from twisted.internet.task import LoopingCall
@@ -14,10 +15,11 @@ from coherence.upnp.core import DIDLLite
 
 import string
 import os, platform
-from StringIO import StringIO
+from io import StringIO
 import tokenize
 
 import pygst
+import six
 pygst.require('0.10')
 import gst
 
@@ -125,7 +127,7 @@ class Player(log.Loggable):
         self.update_LC = LoopingCall(self.update)
 
     def _set_props(self, element, props):
-        for option, value in props.iteritems():
+        for option, value in six.iteritems(props):
             value = self._py_value(value)
             element.set_property(option, value)
 
@@ -310,7 +312,7 @@ class Player(log.Loggable):
             self.duration = None
             self.debug("duration unknown")
             return r
-        r[u'raw'] = {u'position':unicode(str(position)), u'remaining':unicode(str(self.duration - position)), u'duration':unicode(str(self.duration))}
+        r[u'raw'] = {u'position':six.text_type(str(position)), u'remaining':six.text_type(str(self.duration - position)), u'duration':six.text_type(str(self.duration))}
 
         position_human = u'%d:%02d' % (divmod( position/1000000000, 60))
         duration_human = u'%d:%02d' % (divmod( self.duration/1000000000, 60))
@@ -385,20 +387,20 @@ class Player(log.Loggable):
         _,state,_ = self.player.get_state()
         if state != gst.STATE_PAUSED:
             self.player.set_state(gst.STATE_PAUSED)
-        l = long(location)*1000000000
+        l = int(location)*1000000000
         p = self.query_position()
 
         #print p['raw']['position'], l
 
         if location[0] == '+':
-            l =  long(p[u'raw'][u'position']) + (long(location[1:])*1000000000)
-            l = min( l, long(p[u'raw'][u'duration']))
+            l =  int(p[u'raw'][u'position']) + (int(location[1:])*1000000000)
+            l = min( l, int(p[u'raw'][u'duration']))
         elif location[0] == '-':
             if location == '-0':
-                l = 0L
+                l = 0
             else:
-                l = long(p[u'raw'][u'position']) - (long(location[1:])*1000000000)
-                l = max( l, 0L)
+                l = int(p[u'raw'][u'position']) - (int(location[1:])*1000000000)
+                l = max( l, 0)
 
 
         self.debug("seeking to %r" % l)
@@ -420,7 +422,7 @@ class Player(log.Loggable):
             #print "setting new stream time to 0"
             #self.player.set_new_stream_time(0L)
         elif location != '-0':
-            print "seek to %r failed" % location
+            print("seek to %r failed" % location)
 
         if location == '-0':
             content_type, _ = self.mimetype.split("/")
@@ -575,7 +577,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
         for view in self.view:
             view.status(self.status(position))
 
-        if position.has_key(u'raw'):
+        if u'raw' in position:
 
             if self.duration == None and 'duration' in position[u'raw']:
                 self.duration = int(position[u'raw'][u'duration'])
@@ -665,9 +667,9 @@ class GStreamerPlayer(log.Loggable,Plugin):
         #self.server.av_transport_server.set_variable(connection_id, 'TransportState', 'TRANSITIONING')
         #self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','PLAY,STOP,PAUSE,SEEK,NEXT,PREVIOUS')
         if uri.startswith('http://'):
-            transport_actions = Set(['PLAY,STOP,PAUSE'])
+            transport_actions = set(['PLAY,STOP,PAUSE'])
         else:
-            transport_actions = Set(['PLAY,STOP,PAUSE,SEEK'])
+            transport_actions = set(['PLAY,STOP,PAUSE,SEEK'])
 
         if len(self.server.av_transport_server.get_variable('NextAVTransportURI').value) > 0:
             transport_actions.add('NEXT')
@@ -691,19 +693,19 @@ class GStreamerPlayer(log.Loggable,Plugin):
         if uri == None:
             return {u'state':u'idle',u'uri':u''}
         else:
-            r = {u'uri':unicode(uri),
+            r = {u'uri':six.text_type(uri),
                  u'position':position}
             if self.tags != {}:
                 try:
-                    r[u'artist'] = unicode(self.tags['artist'])
+                    r[u'artist'] = six.text_type(self.tags['artist'])
                 except:
                     pass
                 try:
-                    r[u'title'] = unicode(self.tags['title'])
+                    r[u'title'] = six.text_type(self.tags['title'])
                 except:
                     pass
                 try:
-                    r[u'album'] = unicode(self.tags['album'])
+                    r[u'album'] = six.text_type(self.tags['album'])
                 except:
                     pass
 
@@ -772,7 +774,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
         """
         dlna-playcontainer://uuid%3Afe814e3e-5214-4c24-847b-383fb599ff01?sid=urn%3Aupnp-org%3AserviceId%3AContentDirectory&cid=1441&fid=1444&fii=0&sc=&md=0
         """
-        from urllib import unquote
+        from six.moves.urllib.parse import unquote
         from cgi import parse_qs
         from coherence.extern.et import ET
         from coherence.upnp.core.utils import parse_xml
@@ -1006,7 +1008,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
         self.server.av_transport_server.set_variable(current_connection_id, 'NextAVTransportURIMetaData',NextMetaData)
         if len(NextURI) == 0  and self.playcontainer == None:
             transport_actions = self.server.av_transport_server.get_variable('CurrentTransportActions').value
-            transport_actions = Set(transport_actions.split(','))
+            transport_actions = set(transport_actions.split(','))
             try:
                 transport_actions.remove('NEXT')
                 self.server.av_transport_server.set_variable(current_connection_id, 'CurrentTransportActions',transport_actions)
@@ -1014,7 +1016,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
                 pass
             return {}
         transport_actions = self.server.av_transport_server.get_variable('CurrentTransportActions').value
-        transport_actions = Set(transport_actions.split(','))
+        transport_actions = set(transport_actions.split(','))
         transport_actions.add('NEXT')
         self.server.av_transport_server.set_variable(current_connection_id, 'CurrentTransportActions',transport_actions)
         return {}

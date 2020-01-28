@@ -5,6 +5,7 @@
 
 # Switch Power service
 
+from __future__ import absolute_import
 from twisted.web import resource
 from twisted.python import failure
 from twisted.internet import task

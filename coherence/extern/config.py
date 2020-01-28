@@ -4,7 +4,10 @@
 
 # Copyright 2007,2008 Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
+from __future__ import print_function
 from coherence.extern.et import ET, indent
+import six
 
 class ConfigMixin(object):
 
@@ -58,7 +61,7 @@ class ConfigDict(dict,ConfigMixin):
                 root.append(value.to_element())
             else:
                 s = ET.SubElement(root,key)
-                if isinstance(value, basestring):
+                if isinstance(value, six.string_types):
                     s.text = value
                 else:
                     s.text = str(value)
@@ -141,7 +144,7 @@ class Config(ConfigDict):
             xml = ET.parse(file)
         except (SyntaxError, IOError):
             raise
-        except Exception, msg:
+        except Exception as msg:
             raise SyntaxError(msg)
 
         xmlroot = xml.getroot()
@@ -157,7 +160,7 @@ class Config(ConfigDict):
                 e.append(value.to_element())
             else:
                 s = ET.SubElement(e,key)
-                if isinstance(value, basestring):
+                if isinstance(value, six.string_types):
                     s.text = value
                 else:
                     s.text = str(value)
@@ -171,11 +174,11 @@ if __name__ == '__main__':
     import sys
 
     config = Config(sys.argv[1])
-    print config
+    print(config)
     config['serverport'] = 55555
     config['test'] = 'test'
     config['logging']['level'] = 'info'
     del config['controlpoint']
     #del config['logging']['level']
-    print config
+    print(config)
     config.save('/tmp/t')

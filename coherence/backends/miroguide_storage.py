@@ -9,7 +9,9 @@
 # Copyright 2009, Jean-Michel Sizun
 # Copyright 2009 Frank Scholz <coherence@beebits.net>
 
-import urllib
+from __future__ import absolute_import
+from __future__ import print_function
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 
 from coherence.upnp.core import utils
 from coherence.upnp.core import DIDLLite
@@ -112,11 +114,11 @@ class MiroGuideStore(AbstractBackendStore):
 
 
         def gotError(error):
-            print "ERROR: %s" % error
+            print("ERROR: %s" % error)
 
         def gotCategories(result):
             if result is None:
-                print "Unable to retrieve list of categories"
+                print("Unable to retrieve list of categories")
                 return
             data,header = result
             categories = eval(data) # FIXME add some checks to avoid code injection
@@ -131,7 +133,7 @@ class MiroGuideStore(AbstractBackendStore):
 
         def gotLanguages(result):
             if result is None:
-                print "Unable to retrieve list of languages"
+                print("Unable to retrieve list of languages")
                 return
             data,header = result
             languages = eval(data) # FIXME add some checks to avoid code injection
@@ -176,7 +178,7 @@ class MiroGuideStore(AbstractBackendStore):
 
 
     def retrieveChannels (self, parent, filter, filter_value, per_page=100, page=0, offset=0, count=0, sort='name'):
-        filter_value = urllib.quote(filter_value.encode("utf-8"))
+        filter_value = six.moves.urllib.parse.quote(filter_value.encode("utf-8"))
 
         limit = count
         if (count == 0):
@@ -187,7 +189,7 @@ class MiroGuideStore(AbstractBackendStore):
 
         def gotChannels(result):
            if result is None:
-               print "Unable to retrieve channel for category %s" % category_id
+               print("Unable to retrieve channel for category %s" % category_id)
                return
            data,header = result
            channels = eval(data)
@@ -207,7 +209,7 @@ class MiroGuideStore(AbstractBackendStore):
                parent.childrenRetrievingNeeded = True
 
         def gotError(error):
-            print "ERROR: %s" % error
+            print("ERROR: %s" % error)
 
         d.addCallbacks(gotChannels, gotError)
         return d
@@ -219,12 +221,12 @@ class MiroGuideStore(AbstractBackendStore):
 
         def gotItems(result):
            if result is None:
-               print "Unable to retrieve items for channel %s" % channel_id
+               print("Unable to retrieve items for channel %s" % channel_id)
                return
            data,header = result
            channel = eval(data)
            items = []
-           if (channel.has_key('item')):
+           if ('item' in channel):
                items = channel['item']
            for item in items:
                #print "item:",item
@@ -233,7 +235,7 @@ class MiroGuideStore(AbstractBackendStore):
                #print "description:", description              
                name = item['name']
                thumbnail_url = None
-               if (channel.has_key('thumbnail_url')):
+               if ('thumbnail_url' in channel):
                    #print "Thumbnail:", channel['thumbnail_url']
                    thumbnail_url = channel['thumbnail_url']
                #size = size['size']
@@ -242,7 +244,7 @@ class MiroGuideStore(AbstractBackendStore):
                parent.add_child(item, external_id=url)
 
         def gotError(error):
-            print "ERROR: %s" % error
+            print("ERROR: %s" % error)
 
         d.addCallbacks(gotItems, gotError)
         return d

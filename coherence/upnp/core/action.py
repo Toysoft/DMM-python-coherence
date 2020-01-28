@@ -4,10 +4,12 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006,2007,2008,2009 Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 from twisted.python import failure
 from twisted.python.util import OrderedDict
 
 from coherence import log
+import six
 
 class Argument:
 
@@ -85,7 +87,7 @@ class Action(log.Loggable):
         in_arguments = self.get_in_arguments()
         self.info("in arguments", [a.get_name() for a in in_arguments])
         instance_id = 0
-        for arg_name, arg in kwargs.iteritems():
+        for arg_name, arg in six.iteritems(kwargs):
             l = [ a for a in in_arguments if arg_name == a.get_name()]
             if len(l) > 0:
                 in_arguments.remove(l[0])
@@ -101,7 +103,7 @@ class Action(log.Loggable):
         action_name = self.name
 
         if(hasattr(self.service.device.client, 'overlay_actions') and
-           self.service.device.client.overlay_actions.has_key(self.name)):
+           self.name in self.service.device.client.overlay_actions):
             self.info("we have an overlay method %r for action %r", self.service.device.client.overlay_actions[self.name], self.name)
             action_name, kwargs = self.service.device.client.overlay_actions[self.name](**kwargs)
             self.info("changing action to %r %r", action_name, kwargs)
@@ -114,8 +116,8 @@ class Action(log.Loggable):
             return failure
 
         if hasattr(self.service.device.client, 'overlay_headers'):
-            self.info("action call has headers %r", kwargs.has_key('headers'))
-            if kwargs.has_key('headers'):
+            self.info("action call has headers %r", 'headers' in kwargs)
+            if 'headers' in kwargs:
                 kwargs['headers'].update(self.service.device.client.overlay_headers)
             else:
                 kwargs['headers'] = self.service.device.client.overlay_headers

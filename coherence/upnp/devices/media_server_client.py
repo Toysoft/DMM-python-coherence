@@ -3,6 +3,7 @@
 
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 from coherence.upnp.services.clients.connection_manager_client import ConnectionManagerClient
 from coherence.upnp.services.clients.content_directory_client import ContentDirectoryClient
 from coherence.upnp.services.clients.av_transport_client import AVTransportClient
@@ -10,6 +11,7 @@ from coherence.upnp.services.clients.av_transport_client import AVTransportClien
 from coherence import log
 
 import coherence.extern.louie as louie
+import six
 
 class MediaServerClient(log.Loggable):
     logCategory = 'ms_client'
@@ -112,6 +114,6 @@ class MediaServerClient(log.Loggable):
         self.info("results=", results)
 
     def process_meta( self, results):
-        for k,v in results.iteritems():
+        for k,v in six.iteritems(results):
             dfr = self.content_directory.browse(k, "BrowseMetadata")
             dfr.addCallback( self.print_results)

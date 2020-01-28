@@ -19,9 +19,10 @@
 
 # Headers in this file shall remain intact.
 
+from __future__ import absolute_import
 from twisted.trial import unittest
 
-import log
+from . import log
 
 __version__ = "$Rev: 8216 $"
 
@@ -224,14 +225,14 @@ class TestGetExceptionMessage(unittest.TestCase):
         try:
             self.func2()
             self.fail()
-        except TypeError, e:
+        except TypeError as e:
             self.verifyException(e)
 
     def testLevel3(self):
         try:
             self.func3()
             self.fail()
-        except TypeError, e:
+        except TypeError as e:
             self.verifyException(e)
 
     def verifyException(self, e):

@@ -9,6 +9,7 @@
 Test cases for L{upnp.core.utils}
 """
 
+from __future__ import absolute_import
 import os
 from twisted.trial import unittest
 from twisted.python.filepath import FilePath

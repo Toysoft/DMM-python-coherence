@@ -3,6 +3,7 @@
 
 # Copyright 2006,2007,2008 Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 import string
 import socket
 import os, sys
@@ -32,6 +33,7 @@ from coherence.upnp.devices.media_server import MediaServer
 from coherence.upnp.devices.media_renderer import MediaRenderer
 from coherence.upnp.devices.binary_light import BinaryLight
 from coherence.upnp.devices.dimmable_light import DimmableLight
+import six
 
 
 try:
@@ -50,12 +52,13 @@ class SimpleRoot(resource.Resource, log.Loggable):
         self.http_hostname = '%s:%d' % (self.coherence.hostname, self.coherence.web_server_port)
 
     def getChild(self, name, request):
+        name = six.ensure_str(name)
         self.debug('SimpleRoot getChild %s, %s' % (name, request))
         if name == 'oob':
             """ we have an out-of-band request """
             return static.File(self.coherence.dbus.pinboard[request.args['key'][0]])
 
-        if name == '':
+        if name in ['', None]:
             return self
 
         # at this stage, name should be a device UUID
@@ -161,7 +164,7 @@ class Plugins(log.Loggable):
         if pkg_resources and isinstance(plugin, pkg_resources.EntryPoint):
             try:
                 plugin = plugin.load(require=False)
-            except (ImportError, AttributeError, pkg_resources.ResolutionError), msg:
+            except (ImportError, AttributeError, pkg_resources.ResolutionError) as msg:
                 self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (plugin.name,msg))
                 self.info(traceback.format_exc())
                 del self._plugins[key]
@@ -183,7 +186,7 @@ class Plugins(log.Loggable):
         return self.__setitem__(key,value)
 
     def keys(self):
-        return self._plugins.keys()
+        return list(self._plugins.keys())
 
     def _collect(self, ids=_valids):
         if not isinstance(ids, (list,tuple)):
@@ -284,7 +287,7 @@ class Coherence(log.Loggable):
         try:
             logfile = config.get('logging').get('logfile',None)
             if logfile != None:
-                logfile = unicode(logfile)
+                logfile = six.text_type(logfile)
         except (KeyError,AttributeError,TypeError):
             logfile = config.get('logfile', None)
         log.init(logfile, _debug)
@@ -298,7 +301,7 @@ class Coherence(log.Loggable):
                 self.hostname = socket.gethostbyname(socket.gethostname())
             except socket.gaierror:
                 self.warning("hostname can't be resolved, maybe a system misconfiguration?")
-                self.hostname = '127.0.0.1'
+                self.hostname = '0.0.0.0'
 
         if self.hostname.startswith('127.'):
             """ use interface detection via routing table as last resort """
@@ -369,7 +372,7 @@ class Coherence(log.Loggable):
                         if not isinstance(arguments, dict):
                             arguments = {}
                         self.add_plugin(plugin, **arguments)
-                    except Exception, msg:
+                    except Exception as msg:
                         self.warning("Can't enable plugin, %s: %s!" % (plugin, msg))
                         self.info(traceback.format_exc())
             else:
@@ -388,7 +391,7 @@ class Coherence(log.Loggable):
                             if 'uuid' not in plugin:
                                 plugin['uuid'] = str(backend.uuid)[5:]
                                 self.config.save()
-                    except Exception, msg:
+                    except Exception as msg:
                         self.warning("Can't enable plugin, %s: %s!" % (plugin, msg))
                         self.info(traceback.format_exc())
 
@@ -417,7 +420,7 @@ class Coherence(log.Loggable):
                     self.ctrl = ControlPoint(self)
                 self.ctrl.auto_client_append('InternetGatewayDevice')
                 self.dbus = dbus_service.DBusPontoon(self.ctrl)
-            except Exception, msg:
+            except Exception as msg:
                 self.warning("Unable to activate dbus sub-system: %r" % msg)
                 self.debug(traceback.format_exc())
             else:
@@ -451,12 +454,12 @@ class Coherence(log.Loggable):
                     return new_backend
                 except KeyError:
                     self.warning("Can't enable %s plugin, sub-system %s not found!" % (plugin, device))
-                except Exception, msg:
+                except Exception as msg:
                     self.warning("Can't enable %s plugin for sub-system %s, %s!" % (plugin, device, msg))
                     self.debug(traceback.format_exc())
-        except KeyError, error:
+        except KeyError as error:
             self.warning("Can't enable %s plugin, not found!" % plugin)
-        except Exception, msg:
+        except Exception as msg:
             self.warning("Can't enable %s plugin, %s!" % (plugin, msg))
             self.debug(traceback.format_exc())
 
@@ -465,7 +468,7 @@ class Coherence(log.Loggable):
         """ plugin is the object return by add_plugin """
         """ or an UUID string                         """
 
-        if isinstance(plugin,basestring):
+        if isinstance(plugin,six.string_types):
             try:
                 plugin = self.active_backends[plugin]
             except KeyError:
@@ -534,7 +537,7 @@ class Coherence(log.Loggable):
                 self.dbus.shutdown()
                 self.dbus = None
 
-            for backend in self.active_backends.itervalues():
+            for backend in six.itervalues(self.active_backends):
                 backend.unregister()
             self.active_backends = {}
             """ send service unsubscribe messages """

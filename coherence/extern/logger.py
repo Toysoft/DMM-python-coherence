@@ -3,10 +3,12 @@
 
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 import os, sys
 #import logging
 
 from twisted.python import log
+import six
 
 LOG_UNSET       =  0
 LOG_DEBUG       = 10
@@ -46,7 +48,7 @@ class _Logger(object):
 
     def __init__(self,name='',level=LOG_DEBUG):
         """ a LOG feed registers with us """
-        if not self.feeds.has_key(name):
+        if name not in self.feeds:
             if self.master_level:
                 level = self.master_level
             self.feeds[name] = {'active':True,'level':level}
@@ -65,7 +67,7 @@ class _Logger(object):
             if level >= self.feeds[name]['level']:
                 a = []
                 for i in args:
-                    if isinstance(i,unicode):
+                    if isinstance(i,six.text_type):
                         i = i.encode('ascii', 'ignore')
                     else:
                         i = str(i)

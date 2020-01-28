@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
 import sys
 import os
 try:
@@ -50,7 +51,7 @@ class build_docs(Command):
             if not self.dry_run:
                 try:
                     rsttext = open(rstfilename).read()
-                except IOError, e:
+                except IOError as e:
                     raise SystemExit(e)
                 rsttext = '\n'.join((substitutions, rsttext))
                 # docutils.core does not offer easy reading from a
@@ -60,7 +61,7 @@ class build_docs(Command):
                                                    writer_name=writer)
                 try:
                     rsttext = open(outfilename, 'w').write(doc)
-                except IOError, e:
+                except IOError as e:
                     raise SystemExit(e)
 
 cmdclass = {}

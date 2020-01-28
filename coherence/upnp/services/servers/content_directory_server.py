@@ -7,6 +7,7 @@
 
 # Content Directory service
 
+from __future__ import absolute_import
 from twisted.python import failure
 from twisted.web import resource
 from twisted.internet import defer
@@ -145,7 +146,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         wmc_mapping = getattr(self.backend, "wmc_mapping", None)
         if kwargs.get('X_UPnPClient', '') == 'XBox':
             if(wmc_mapping != None and
-               wmc_mapping.has_key(ContainerID)):
+               ContainerID in wmc_mapping):
                 """ fake a Windows Media Connect Server
                 """
                 root_id = wmc_mapping[ContainerID]
@@ -294,7 +295,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         wmc_mapping = getattr(self.backend, "wmc_mapping", None)
         if(kwargs.get('X_UPnPClient', '') == 'XBox' and
             wmc_mapping != None and
-            wmc_mapping.has_key(ObjectID)):
+            ObjectID in wmc_mapping):
             """ fake a Windows Media Connect Server
             """
             root_id = wmc_mapping[ObjectID]

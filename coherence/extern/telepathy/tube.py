@@ -3,12 +3,14 @@
 
 # Copyright 2009 Philippe Normand <phil@base-art.net>
 
+from __future__ import absolute_import
 from telepathy.interfaces import CHANNEL_INTERFACE, CONNECTION_INTERFACE_REQUESTS, \
      CHANNEL_TYPE_DBUS_TUBE, ACCOUNT
 from telepathy.constants import CONNECTION_HANDLE_TYPE_ROOM, \
      SOCKET_ACCESS_CONTROL_CREDENTIALS
 
 from coherence.extern.telepathy.client import Client
+import six
 
 class TubePublisherMixin(object):
 
@@ -47,7 +49,7 @@ class TubePublisherMixin(object):
         self.info("local tube address: %r", address)
 
     def close_tubes(self):
-        for object_path, channel in self._tubes.iteritems():
+        for object_path, channel in six.iteritems(self._tubes):
             channel.Close()
 
 class TubePublisher(TubePublisherMixin, Client):

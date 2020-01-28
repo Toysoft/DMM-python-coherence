@@ -1,3 +1,5 @@
+import six
+from six.moves import range
 # Wraps DB-API 2.0 query results to provide a nice list and dictionary interface.
 # Copyright (C) 2002  Dr. Conan C. Albrecht <conan_albrecht@byu.edu>
 #
@@ -107,7 +109,7 @@ class DBRow(object):
 
     def keys(self):
         """Return the field names"""
-        return self.fields.keys()
+        return list(self.fields.keys())
 
     def keymappings(self):
         """Return a dictionary of the keys and their indices in the row"""
@@ -115,13 +117,13 @@ class DBRow(object):
 
     def has_key(self, key):
         """Return whether the given key is valid"""
-        return self.fields.has_key(key)
+        return key in self.fields
 
     def as_dict(self):
         d = {}
-        for field_name, pos in self.fields.iteritems():
+        for field_name, pos in six.iteritems(self.fields):
             d[field_name] = self.row[pos]
-        for field_name, field in self._extra_fields.iteritems():
+        for field_name, field in six.iteritems(self._extra_fields):
             d[field_name] = field
         return d
 

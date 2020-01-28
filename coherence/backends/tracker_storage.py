@@ -3,6 +3,8 @@
 
 # Copyright 2008, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os.path
 
 from twisted.internet import reactor, defer
@@ -19,6 +21,7 @@ import dbus.service
 import coherence.extern.louie as louie
 
 from coherence.backend import BackendItem, BackendStore
+import six
 
 ROOT_CONTAINER_ID = 0
 AUDIO_CONTAINER_ID = 100
@@ -88,7 +91,7 @@ class Container(BackendItem):
 
     def add_child(self, child):
         id = child.id
-        if isinstance(child.id, basestring):
+        if isinstance(child.id, six.string_types):
             _,id = child.id.split('.')
         self.children[id] = child
         if self.item.childCount != None:
@@ -100,7 +103,7 @@ class Container(BackendItem):
         if callable(self.children):
             return self.children(start,end-start)
         else:
-            children = self.children.values()
+            children = list(self.children.values())
         if end == 0:
             return children[start:]
         else:
@@ -146,7 +149,7 @@ class Artist(BackendItem):
                 r = cmp(self.children[x].name,self.children[y].name)
                 return r
 
-            self.sorted_children = self.children.keys()
+            self.sorted_children = list(self.children.keys())
             self.sorted_children.sort(cmp=childs_sort)
         return self.sorted_children
 
@@ -190,8 +193,8 @@ class Album(BackendItem):
     def __init__(self, store, id, title, artist):
         self.store = store
         self.id = 'album.%d' % int(id)
-        self.name = unicode(title)
-        self.artist = unicode(artist)
+        self.name = six.text_type(title)
+        self.artist = six.text_type(artist)
         self.cover = None
         self.children = {}
         self.sorted_children = None
@@ -210,7 +213,7 @@ class Album(BackendItem):
                 r = cmp(self.children[x].track_nr,self.children[y].track_nr)
                 return r
 
-            self.sorted_children = self.children.keys()
+            self.sorted_children = list(self.children.keys())
             self.sorted_children.sort(cmp=childs_sort)
             for key in self.sorted_children:
                 children.append(self.children[key])
@@ -256,7 +259,7 @@ class Track(BackendItem):
         self.id = 'song.%d' % int(id)
         self.parent_id = parent_id
 
-        self.path = unicode(file)
+        self.path = six.text_type(file)
 
         duration = str(duration).strip()
         duration = duration.split('.')[0]
@@ -271,10 +274,10 @@ class Track(BackendItem):
 
         self.bitrate = 0
 
-        self.title = unicode(title)
-        self.artist = unicode(artist)
-        self.album = unicode(album)
-        self.genre = unicode(genre)
+        self.title = six.text_type(title)
+        self.artist = six.text_type(artist)
+        self.album = six.text_type(album)
+        self.genre = six.text_type(genre)
         track_number = str(track_number).strip()
         if len(track_number) == 0:
             track_number = 1
@@ -372,7 +375,7 @@ class Video(BackendItem):
         self.id = 'video.%d' % int(id)
         self.parent_id = parent_id
 
-        self.path = unicode(file)
+        self.path = six.text_type(file)
 
         duration = str(duration).strip()
         duration = duration.split('.')[0]
@@ -385,7 +388,7 @@ class Video(BackendItem):
         seconds = seconds - minutes * 60
         self.duration = ("%d:%02d:%02d") % (hours, minutes, seconds)
 
-        self.title = unicode(title)
+        self.title = six.text_type(title)
 
         self.cover = None
         self.mimetype = str(mimetype)
@@ -448,11 +451,11 @@ class Image(BackendItem):
         self.id = 'image.%d' % int(id)
         self.parent_id = parent_id
 
-        self.path = unicode(file)
+        self.path = six.text_type(file)
 
-        self.title = unicode(title)
+        self.title = six.text_type(title)
 
-        self.album = unicode(album.strip())
+        self.album = six.text_type(album.strip())
         self.mimetype = str(mimetype)
         self.size = int(size)
 
@@ -548,7 +551,7 @@ class TrackerStore(BackendStore):
             louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=error)
 
         services = kwargs.get('service','Music,Videos,Images')
-        services = map(lambda x: x.strip().lower(),services.split(','))
+        services = [x.strip().lower() for x in services.split(',')]
 
         l = []
         mapping =  {'music':self.get_tracks,
@@ -571,10 +574,10 @@ class TrackerStore(BackendStore):
 
     def get_by_id(self,id):
         self.info("looking for id %r", id)
-        if isinstance(id, basestring):
+        if isinstance(id, six.string_types):
             id = id.split('@',1)
             id = id[0]
-        if isinstance(id, basestring) and id.startswith('artist_all_tracks_'):
+        if isinstance(id, six.string_types) and id.startswith('artist_all_tracks_'):
             try:
                 return self.containers[id]
             except:
@@ -603,7 +606,7 @@ class TrackerStore(BackendStore):
     def get_videos(self):
 
         def handle_error(error):
-            print error
+            print(error)
             return error
 
         def parse_videos_query_result(resultlist):
@@ -655,7 +658,7 @@ class TrackerStore(BackendStore):
             return error
 
         def parse_images_query_result(resultlist):
-            print "images", resultlist
+            print("images", resultlist)
             images = []
             for image in resultlist:
                 file,_,title,album,\
@@ -732,7 +735,7 @@ class TrackerStore(BackendStore):
                     album_item.add_child(track_item)
                 except:
                     album_item = Album(self, self.albums, track_item.album, track_item.artist)
-                    albums[unicode(track_item.album)] = album_item
+                    albums[six.text_type(track_item.album)] = album_item
                     self.albums += 1
                     album_item.add_child(track_item)
 
@@ -741,15 +744,15 @@ class TrackerStore(BackendStore):
                         artist_item.add_child(album_item)
                     except:
                         artist_item = Artist(self, self.artists, track_item.artist)
-                        artists[unicode(track_item.artist)] = artist_item
+                        artists[six.text_type(track_item.artist)] = artist_item
                         self.artists += 1
                         artist_item.add_child(album_item)
 
-            sorted_keys = albums.keys()
+            sorted_keys = list(albums.keys())
             sorted_keys.sort()
             for key in sorted_keys:
                 self.containers[AUDIO_ALBUM_CONTAINER_ID].add_child(albums[key])
-            sorted_keys = artists.keys()
+            sorted_keys = list(artists.keys())
             sorted_keys.sort()
             for key in sorted_keys:
                 self.containers[AUDIO_ARTIST_CONTAINER_ID].add_child(artists[key])

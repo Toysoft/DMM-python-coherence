@@ -3,9 +3,12 @@
 
 # Copyright 2007, Philippe Normand <philippe@fluendo.com>
 
+from __future__ import absolute_import
+from __future__ import print_function
 from coherence.extern.log import log as externlog
 from coherence.extern.log.log import *
 import os
+import six
 
 def human2level(levelname):
     levelname = levelname.lower()
@@ -30,11 +33,8 @@ def customStderrHandler(level, object, category, file, line, message):
     @type category: string
     @type message:  string
     """
-    if not isinstance(message, basestring):
+    if not isinstance(message, six.string_types):
         message = str(message)
-
-    if isinstance(message, unicode):
-        message = message.encode('utf-8')
 
     message = "".join(message.splitlines())
     where = "(%s:%d)" % (file, line)
@@ -71,7 +71,7 @@ def set_debug(loglevel):
     setDebug(loglevel)
 
 def show_levels():
-    print externlog._categories
+    print(externlog._categories)
 
 # Make Loggable a new-style object
 class Loggable(externlog.Loggable, object):

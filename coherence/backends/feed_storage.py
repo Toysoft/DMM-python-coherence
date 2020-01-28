@@ -3,15 +3,17 @@
 
 # Copyright 2009, Dominik Ruf <dominikruf at googlemail dot com>
 
+from __future__ import absolute_import
 from coherence.backend import BackendItem
 from coherence.backend import BackendStore
 from coherence.upnp.core import DIDLLite
 from coherence.upnp.core.utils import ReverseProxyUriResource
 
 from xml.etree.ElementTree import ElementTree
-import urllib
-import httplib
-from urlparse import urlsplit
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+import six.moves.http_client
+from six.moves.urllib.parse import urlsplit
+import six
 try:
     import feedparser
 except:
@@ -35,7 +37,7 @@ class RedirectingReverseProxyUriResource(ReverseProxyUriResource):
 
     def follow_redirect(self, uri):
         netloc, path, query, fragment = urlsplit(uri)[1:]
-        conn = httplib.HTTPConnection(netloc)
+        conn = six.moves.http_client.HTTPConnection(netloc)
         conn.request('HEAD', '%s?%s#%s' % (path, query, fragment))
         res = conn.getresponse()
         if(res.status == 301 or res.status == 302):
@@ -130,13 +132,13 @@ class FeedStore(BackendStore):
 
         try:
             self._update_data()
-        except Exception, e:
+        except Exception as e:
             self.error('error while updateing the feed contant for %s: %s' % (self.name, str(e)))
         self.init_completed()
 
     def get_by_id(self,id):
         """returns the item according to the DIDLite id"""
-        if isinstance(id, basestring):
+        if isinstance(id, six.string_types):
             id = id.split('@',1)
             id = id[0]
         try:
@@ -149,7 +151,7 @@ class FeedStore(BackendStore):
         """get the feed xml, parse it, etc."""
         feed_urls = []
         if(self.opml_url):
-            tree = ElementTree(file=urllib.urlopen(self.opml_url))
+            tree = ElementTree(file=six.moves.urllib.request.urlopen(self.opml_url))
             body = tree.find('body')
             for outline in body.findall('outline'):
                 feed_urls.append(outline.attrib['url'])
@@ -160,7 +162,7 @@ class FeedStore(BackendStore):
         item_id = 1001
         for feed_url in feed_urls:
             netloc, path, query, fragment = urlsplit(feed_url)[1:]
-            conn = httplib.HTTPConnection(netloc)
+            conn = six.moves.http_client.HTTPConnection(netloc)
             conn.request('HEAD', '%s?%s#%s' % (path, query, fragment))
             res = conn.getresponse()
             if res.status >= 400:

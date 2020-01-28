@@ -69,6 +69,8 @@ In the config file the definition of this backend could look like this:
 
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 
 from twisted.python.filepath import FilePath
@@ -77,6 +79,7 @@ from twisted.web import resource,server
 
 from coherence.backend import BackendStore,BackendRssMixin
 from coherence.backend import BackendItem
+import six
 
 try:
     from coherence.transcoder import GStreamerPipeline
@@ -97,15 +100,15 @@ class ExternalProcessProtocol(protocol.ProcessProtocol):
         self.caller = caller
 
     def connectionMade(self):
-        print "pp connection made"
+        print("pp connection made")
 
     def outReceived(self, data):
-        print "outReceived with %d bytes!" % len(data)
+        print("outReceived with %d bytes!" % len(data))
         self.caller.write_data(data)
 
     def errReceived(self, data):
         #print "errReceived! with %d bytes!" % len(data)
-        print "pp (err):", data.strip()
+        print("pp (err):", data.strip())
 
     def inConnectionLost(self):
         #print "inConnectionLost! stdin is closed! (we probably did it)"
@@ -120,8 +123,8 @@ class ExternalProcessProtocol(protocol.ProcessProtocol):
         pass
 
     def processEnded(self, status_object):
-        print "processEnded, status %d" % status_object.value.exitCode
-        print "processEnded quitting"
+        print("processEnded, status %d" % status_object.value.exitCode)
+        print("processEnded quitting")
         self.caller.ended = True
         self.caller.write_data('')
 
@@ -135,7 +138,7 @@ class ExternalProcessPipeline(resource.Resource, log.Loggable):
         self.mimetype = mimetype
 
     def render(self, request):
-        print "ExternalProcessPipeline render"
+        print("ExternalProcessPipeline render")
         if self.mimetype:
             request.setHeader('content-type', self.mimetype)
 
@@ -158,19 +161,19 @@ class ExternalProcessProducer(object):
 
     def write_data(self,data):
         if data:
-            print "write %d bytes of data" % len(data)
+            print("write %d bytes of data" % len(data))
             self.written += len(data)
             # this .write will spin the reactor, calling .doWrite and then
             # .resumeProducing again, so be prepared for a re-entrant call
             self.request.write(data)
         if self.request and self.ended == True:
-            print "closing"
+            print("closing")
             self.request.unregisterProducer()
             self.request.finish()
             self.request = None
 
     def resumeProducing(self):
-        print "resumeProducing", self.request
+        print("resumeProducing", self.request)
         if not self.request:
             return
         if self.process == None:
@@ -183,7 +186,7 @@ class ExternalProcessProducer(object):
         pass
 
     def stopProducing(self):
-        print "stopProducing",self.request
+        print("stopProducing",self.request)
         self.request.unregisterProducer()
         self.process.loseConnection()
         self.request.finish()
@@ -210,7 +213,7 @@ class Item(BackendItem):
         self.item = None
 
     def get_item(self):
-        print "get_item %r" % self.item
+        print("get_item %r" % self.item)
         if self.item == None:
             self.item = self.upnp_class(self.id, self.parent.id, self.get_name())
             self.item.description = self.description
@@ -277,7 +280,7 @@ class Container(BackendItem):
         self.sorted = False
 
     def add_child(self, child):
-        print "ADD CHILD %r" % child
+        print("ADD CHILD %r" % child)
         #id = child.id
         #if isinstance(child.id, basestring):
         #    _,id = child.id.split('.')
@@ -286,7 +289,7 @@ class Container(BackendItem):
         self.sorted = False
 
     def get_children(self, start=0, end=0):
-        print "GET CHILDREN"
+        print("GET CHILDREN")
         if self.sorted == False:
             def childs_sort(x,y):
                 r = cmp(x.name,y.name)
@@ -319,7 +322,7 @@ class TestStore(BackendStore):
     implements = ['MediaServer']
 
     def __init__(self, server, *args, **kwargs):
-        print "TestStore kwargs", kwargs
+        print("TestStore kwargs", kwargs)
         BackendStore.__init__(self,server,**kwargs)
         self.name = kwargs.get('name', 'TestServer')
         self.next_id = 1000
@@ -334,9 +337,9 @@ class TestStore(BackendStore):
             items = [items]
 
         for item in items:
-            if isinstance(item,basestring):
+            if isinstance(item,six.string_types):
                 xml = parse_xml(item)
-                print xml.getroot()
+                print(xml.getroot())
                 item = {}
                 for child in xml.getroot():
                     item[child.tag] = child.text
@@ -418,7 +421,7 @@ class TestStore(BackendStore):
         return self.next_id
 
     def get_by_id(self, id):
-        print "GET_BY_ID %r" % id
+        print("GET_BY_ID %r" % id)
         item = self.store.get(id,None)
         if item == None:
             if int(id) == 0:

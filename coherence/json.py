@@ -3,11 +3,13 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
+from __future__ import absolute_import
 import simplejson as json
 from twisted.web import resource,static
 from twisted.internet import defer
 
 from coherence import log
+import six
 
 class JsonInterface(resource.Resource,log.Loggable):
     logCategory = 'json'
@@ -75,7 +77,7 @@ class JsonInterface(resource.Resource,log.Loggable):
     def call_action(self,action,request):
         kwargs = {}
         for entry,value_list in request.args.items():
-            kwargs[entry] = unicode(value_list[0])
+            kwargs[entry] = six.text_type(value_list[0])
 
         def to_json(result):
             self.warning("to_json")

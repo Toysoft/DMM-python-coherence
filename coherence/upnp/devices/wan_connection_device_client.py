@@ -5,6 +5,7 @@
 
 # Copyright 2010 Frank Scholz <dev@coherence-project.org>
 
+from __future__ import absolute_import
 from coherence.upnp.services.clients.wan_ip_connection_client import WANIPConnectionClient
 from coherence.upnp.services.clients.wan_ppp_connection_client import WANPPPConnectionClient
 

@@ -9,6 +9,8 @@
 # Implementation of a SSDP server under Twisted Python.
 #
 
+from __future__ import absolute_import
+from __future__ import print_function
 import random
 import string
 import sys
@@ -23,6 +25,7 @@ from twisted.web.http import datetimeToString
 from coherence import log, SERVER_ID
 
 import coherence.extern.louie as louie
+import six
 
 SSDP_PORT = 1900
 SSDP_ADDR = '239.255.255.250'
@@ -52,7 +55,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 self.check_valid_loop = task.LoopingCall(self.check_valid)
                 self.check_valid_loop.start(333.0, now=False)
 
-            except error.CannotListenError, err:
+            except error.CannotListenError as err:
                 self.warning("There seems to be already a SSDP server running on this host, no need starting a second one.")
 
         self.active_calls = []
@@ -71,23 +74,25 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 if self.known[st]['MANIFESTATION'] == 'local':
                     self.doByebye(st)
 
-    def datagramReceived(self, data, (host, port)):
+    def datagramReceived(self, data, addr):
         """Handle a received multicast datagram."""
-
-        try:
-            header, payload = data.split('\r\n\r\n')[:2]
-        except ValueError, err:
-            print err
-            print 'Arggg,', data
-            import pdb; pdb.set_trace()
+        (host, port) = addr
+#        try:
+        self.msg(data)
+        data = six.ensure_str(data)
+        header, payload = data.split('\r\n\r\n')[:2]
+#        except ValueError as err:
+#            print(err)
+#            print('Arggg,', data)
+#            import pdb; pdb.set_trace()
 
         lines = header.split('\r\n')
-        cmd = string.split(lines[0], ' ')
-        lines = map(lambda x: x.replace(': ', ':', 1), lines[1:])
-        lines = filter(lambda x: len(x) > 0, lines)
+        cmd = lines[0].split(' ')
+        lines = [x.replace(': ', ':', 1) for x in lines[1:]]
+        lines = [x for x in lines if len(x) > 0]
 
-        headers = [string.split(x, ':', 1) for x in lines]
-        headers = dict(map(lambda x: (x[0].lower(), x[1]), headers))
+        headers = [x.split(':', 1) for x in lines]
+        headers = dict([(x[0].lower(), x[1]) for x in headers])
 
         self.msg('SSDP command %s %s - from %s:%d' % (cmd[0], cmd[1], host, port))
         self.debug('with headers:', headers)
@@ -152,12 +157,12 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         del self.known[usn]
 
     def isKnown(self, usn):
-        return self.known.has_key(usn)
+        return usn in self.known
 
-    def notifyReceived(self, headers, (host, port)):
+    def notifyReceived(self, headers, addr):
         """Process a presence announcement.  We just remember the
         details of the SSDP service announced."""
-
+        (host, port) = addr
         self.info('Notification from (%s,%d) for %s' % (host, port, headers['nt']))
         self.debug('Notification headers:', headers)
 
@@ -180,14 +185,14 @@ class SSDPServer(DatagramProtocol, log.Loggable):
     def send_it(self,response,destination,delay,usn):
         self.info('send discovery response delayed by %ds for %s to %r' % (delay,usn,destination))
         try:
-            self.transport.write(response,destination)
-        except (AttributeError,socket.error), msg:
+            self.transport.write(six.ensure_binary(response),destination)
+        except (AttributeError,socket.error) as msg:
             self.info("failure sending out byebye notification: %r" % msg)
 
-    def discoveryRequest(self, headers, (host, port)):
+    def discoveryRequest(self, headers, xxx_todo_changeme2):
         """Process a discovery request.  The response must be sent to
         the address specified by (host, port)."""
-
+        (host, port) = xxx_todo_changeme2
         self.info('Discovery request from (%s,%d) for %s' % (host, port, headers['st']))
         self.info('Discovery request for %s' % headers['st'])
 
@@ -216,7 +221,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 delay = random.randint(0, int(headers['mx']))
 
                 reactor.callLater(delay, self.send_it,
-                                '\r\n'.join(response), (host, port), delay, usn)
+                                six.ensure_binary('\r\n'.join(response)), (host, port), delay, usn)
 
     def doNotify(self, usn):
         """Do notification"""
@@ -229,7 +234,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
             'NTS: ssdp:alive',
             ]
-        stcpy = dict(self.known[usn].iteritems())
+        stcpy = dict(six.iteritems(self.known[usn]))
         stcpy['NT'] = stcpy['ST']
         del stcpy['ST']
         del stcpy['MANIFESTATION']
@@ -237,13 +242,13 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         del stcpy['HOST']
         del stcpy['last-seen']
 
-        resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
+        resp.extend([': '.join(x) for x in six.iteritems(stcpy)])
         resp.extend(('', ''))
         self.debug('doNotify content', resp)
         try:
-            self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
-            self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
-        except (AttributeError,socket.error), msg:
+            self.transport.write(six.ensure_binary('\r\n'.join(resp)), (SSDP_ADDR, SSDP_PORT))
+            self.transport.write(six.ensure_binary('\r\n'.join(resp)), (SSDP_ADDR, SSDP_PORT))
+        except (AttributeError,socket.error) as msg:
             self.info("failure sending out alive notification: %r" % msg)
 
     def doByebye(self, usn):
@@ -256,22 +261,22 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 'NTS: ssdp:byebye',
                 ]
         try:
-            stcpy = dict(self.known[usn].iteritems())
+            stcpy = dict(six.iteritems(self.known[usn]))
             stcpy['NT'] = stcpy['ST']
             del stcpy['ST']
             del stcpy['MANIFESTATION']
             del stcpy['SILENT']
             del stcpy['HOST']
             del stcpy['last-seen']
-            resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
+            resp.extend([': '.join(x) for x in six.iteritems(stcpy)])
             resp.extend(('', ''))
             self.debug('doByebye content', resp)
             if self.transport:
                 try:
-                    self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
-                except (AttributeError,socket.error), msg:
+                    self.transport.write(six.ensure_binary('\r\n'.join(resp)), (SSDP_ADDR, SSDP_PORT))
+                except (AttributeError,socket.error) as msg:
                     self.info("failure sending out byebye notification: %r" % msg)
-        except KeyError, msg:
+        except KeyError as msg:
             self.debug("error building byebye notification: %r" % msg)
 
     def resendNotify( self):

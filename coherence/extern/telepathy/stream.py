@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import socket
 import gobject
 
@@ -10,16 +12,16 @@ class TrivialStream:
         try:
             data = s.recv(1024)
             if len(data) > 0:
-                print "received:", data
-        except socket.error, e:
+                print("received:", data)
+        except socket.error as e:
             pass
         return True
 
     def write_socket(self, s, msg):
-        print "send:", msg
+        print("send:", msg)
         try:
             s = s.send(msg)
-        except socket.error, e:
+        except socket.error as e:
             pass
         return True
 
@@ -35,7 +37,7 @@ class TrivialStreamServer(TrivialStream):
         self._socket.bind(("127.0.0.1", 0))
 
         self.socket_address = self._socket.getsockname()
-        print "Trivial Server launched on socket", self.socket_address
+        print("Trivial Server launched on socket", self.socket_address)
         self._socket.listen(1)
 
         gobject.timeout_add(1000, self.accept_client, self._socket)
@@ -58,4 +60,4 @@ class TrivialStreamClient(TrivialStream):
     def connect(self):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.connect(self.socket_address)
-        print "Trivial client connected to", self.socket_address
+        print("Trivial client connected to", self.socket_address)

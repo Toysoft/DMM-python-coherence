@@ -16,6 +16,7 @@ and failures in particular.
 Maintainer: U{Thomas Vander Stichele <thomas at apestaart dot org>}
 """
 
+from __future__ import absolute_import
 import errno
 import sys
 import os
@@ -23,6 +24,9 @@ import fnmatch
 import time
 import types
 import traceback
+from six.moves import map
+from six.moves import range
+import six
 
 # environment variables controlling levels for each category
 _DEBUG = "*:1"
@@ -50,7 +54,7 @@ _old_hup_handler = None
  WARN,
  INFO,
  DEBUG,
- LOG) = range(1, 6)
+ LOG) = list(range(1, 6))
 
 COLORS = {ERROR: 'RED',
           WARN: 'YELLOW',
@@ -224,10 +228,10 @@ def getFileLine(where=-1):
     lineno = None
 
     if isinstance(where, types.FunctionType):
-        co = where.func_code
+        co = where.__code__
         lineno = co.co_firstlineno
     elif isinstance(where, types.MethodType):
-        co = where.im_func.func_code
+        co = where.__func__.__code__
         lineno = co.co_firstlineno
     else:
         stackFrame = sys._getframe()
@@ -316,7 +320,7 @@ def doLog(level, object, category, format, args, where=-1,
         for handler in _log_handlers:
             try:
                 handler(level, object, category, file, line, message)
-            except TypeError, e:
+            except TypeError as e:
                 raise SystemError("handler %r raised a TypeError: %s" % (
                     handler, getExceptionMessage(e)))
 
@@ -333,7 +337,7 @@ def doLog(level, object, category, format, args, where=-1,
             # loggers there before
             try:
                 handler(level, object, category, filePath, line, message)
-            except TypeError, e:
+            except TypeError as e:
                 raise SystemError("handler %r raised a TypeError: %s" % (
                     handler, getExceptionMessage(e)))
 
@@ -393,7 +397,7 @@ def safeprintf(file, format, *args):
             file.write(format % args)
         else:
             file.write(format)
-    except IOError, e:
+    except IOError as e:
         if e.errno == errno.EPIPE:
             # if our output is closed, exit; e.g. when logging over an
             # ssh connection and the ssh connection is closed
@@ -438,7 +442,7 @@ def _preformatLevels(noColorEnvVarName):
     format = '%-5s'
 
     try:
-        import termcolor
+        from . import termcolor
     except ImportError:
         # we don't need to catch this if termcolor is in same package as
         # log.py
@@ -660,7 +664,7 @@ def reopenOutputFiles():
         return
 
     def reopen(name, fileno, *args):
-        oldmask = os.umask(0026)
+        oldmask = os.umask(0o026)
         try:
             f = open(name, 'a+', *args)
         finally:

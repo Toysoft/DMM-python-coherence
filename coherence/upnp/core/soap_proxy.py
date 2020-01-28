@@ -3,7 +3,11 @@
 
 # Copyright 2007 - Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
+from __future__ import print_function
 from twisted.python import failure
+
+import six
 
 from coherence import log
 
@@ -44,9 +48,9 @@ class SOAPProxy(log.Loggable):
 
         self.info("callRemote %r %r %r %r", self.soapaction, soapmethod, self.namespace, self.action)
 
-        headers = { 'content-type': 'text/xml ;charset="utf-8"',
-                    'SOAPACTION': '"%s"' % soapaction,}
-        if arguments.has_key('headers'):
+        headers = { b'content-type': b'text/xml ;charset="utf-8"',
+                    b'SOAPACTION': six.ensure_binary('"%s"' % soapaction),}
+        if 'headers' in arguments:
             headers.update(arguments['headers'])
             del arguments['headers']
 
@@ -69,7 +73,7 @@ class SOAPProxy(log.Loggable):
                 self.debug(traceback.format_exc())
             return error
 
-        return getPage(self.url, postdata=payload, method="POST",
+        return getPage(six.ensure_binary(self.url), postdata=payload, method=b"POST",
                         headers=headers
                       ).addCallbacks(self._cbGotResult, gotError, None, None, [self.url], None)
 
@@ -81,7 +85,7 @@ class SOAPProxy(log.Loggable):
 
         def print_c(e):
             for c in e.getchildren():
-                print c, c.tag
+                print(c, c.tag)
                 print_c(c)
 
         self.debug("result: %r" % page)

@@ -5,6 +5,7 @@
 
 # Copyright 2007,, Frank Scholz <coherence@beebits.net>
 
+from __future__ import absolute_import
 import time
 from coherence.extern.simple_plugin import Plugin
 
@@ -16,6 +17,7 @@ from coherence.upnp.core.utils import getPage
 from coherence.extern.et import parse_xml
 from coherence.upnp.core import DIDLLite
 from twisted.internet import defer,reactor
+import six
 
 class Backend(log.Loggable,Plugin):
 
@@ -419,7 +421,7 @@ class LazyContainer(Container, log.Loggable):
         self.children_retrieval_campaign_in_progress = False
         self.childrenRetriever_params = kwargs
         self.childrenRetriever_params['parent']=self
-        self.has_pages = (self.childrenRetriever_params.has_key('per_page'))
+        self.has_pages = ('per_page' in self.childrenRetriever_params)
 
         self.external_id = None
         self.external_id = external_id
@@ -453,7 +455,7 @@ class LazyContainer(Container, log.Loggable):
         for id,item in old_children.items():
             children_to_be_removed[id] = item
         for id,item in new_children.items():
-            if old_children.has_key(id):
+            if id in old_children:
                 #print(id, "already there")
                 children_to_be_replaced[id] = old_children[id]
                 del children_to_be_removed[id]
@@ -598,7 +600,7 @@ class AbstractBackendStore (BackendStore):
 
 
     def get_by_id(self,id):
-        if isinstance(id, basestring):
+        if isinstance(id, six.string_types):
             id = id.split('@',1)
             id = id[0].split('.')[0]
         try:
